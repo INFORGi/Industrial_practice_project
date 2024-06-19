@@ -412,4 +412,3 @@ class DataBase:
         for i in range(len(data)):
             item_text = ' / '.join(str(value) for value in data[i])
             list.insertItem(i, item_text)
-
