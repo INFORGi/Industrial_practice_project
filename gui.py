@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit,
                              QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
                              QMainWindow, QFrame, QScrollArea, QGridLayout, QHeaderView,
                              QFileDialog, QDialog, QComboBox, QTableView, QSizePolicy, QAbstractItemView,
-                             QLayout, QListWidget)
+                             QLayout, QListWidget, QDesktopWidget)
 
 from PyQt5.QtCore import Qt, QSortFilterProxyModel
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
@@ -101,6 +101,19 @@ class MainAdmin(QMainWindow):
         self.init_ui()
         self.showMaximized()
 
+    def message_errore(self, error):
+        message = QMessageBox()
+        message.setStyleSheet("background-color: white;")  # Установка белого фона
+        message.setText(error)
+        
+        # Центрирование окна сообщения
+        qr = message.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        message.move(qr.topLeft())
+        
+        message.exec_()
+
     def init_ui(self):
         self.setWindowTitle('Администратор')
         self.setStyleSheet(f'background-color: {self.main_color};')
@@ -160,44 +173,47 @@ class MainAdmin(QMainWindow):
         self.setCentralWidget(main_widget)
 
     def click_button_user(self):
-        if hasattr(self, 'dop_frame') and self.dop_frame is not None:
-            self.dop_frame.deleteLater()
-            self.dop_frame = None
+        try:
+            if hasattr(self, 'dop_frame') and self.dop_frame is not None:
+                self.dop_frame.deleteLater()
+                self.dop_frame = None
 
-        self.clear_table_layout()
+            self.clear_table_layout()
 
-        self.dop_frame = QFrame(self)
-        self.dop_frame.setStyleSheet('background-color: Green;')
-        self.dop_frame.setFixedHeight(60)
-        self.work_area_layout.insertWidget(0, self.dop_frame)
+            self.dop_frame = QFrame(self)
+            self.dop_frame.setStyleSheet('background-color: Green;')
+            self.dop_frame.setFixedHeight(60)
+            self.work_area_layout.insertWidget(0, self.dop_frame)
 
-        button_layout = QHBoxLayout(self.dop_frame)
+            button_layout = QHBoxLayout(self.dop_frame)
 
-        button_executives = QPushButton('Администраторы')
-        button_executives.setStyleSheet(
-            'font-size: 24px; color: yellow; background-color: lime;')
-        button_executives.clicked.connect(self.create_table_admin)
-        button_layout.addWidget(button_executives)
+            button_executives = QPushButton('Администраторы')
+            button_executives.setStyleSheet(
+                'font-size: 24px; color: yellow; background-color: lime;')
+            button_executives.clicked.connect(self.create_table_admin)
+            button_layout.addWidget(button_executives)
 
-        button_curators = QPushButton('Кураторы')
-        button_curators.setStyleSheet(
-            'font-size: 24px; color: yellow; background-color: lime;')
-        button_curators.clicked.connect(self.create_table_curator)
-        button_layout.addWidget(button_curators)
+            button_curators = QPushButton('Кураторы')
+            button_curators.setStyleSheet(
+                'font-size: 24px; color: yellow; background-color: lime;')
+            button_curators.clicked.connect(self.create_table_curator)
+            button_layout.addWidget(button_curators)
 
-        button_teachers = QPushButton('Преподаватели')
-        button_teachers.setStyleSheet(
-            'font-size: 24px; color: yellow; background-color: lime;')
-        button_teachers.clicked.connect(self.create_table_teacher)
-        button_layout.addWidget(button_teachers)
+            button_teachers = QPushButton('Преподаватели')
+            button_teachers.setStyleSheet(
+                'font-size: 24px; color: yellow; background-color: lime;')
+            button_teachers.clicked.connect(self.create_table_teacher)
+            button_layout.addWidget(button_teachers)
 
-        button_students = QPushButton('Ученики')
-        button_students.setStyleSheet(
-            'font-size: 24px; color: yellow; background-color: lime;')
-        button_students.clicked.connect(self.create_table_student)
-        button_layout.addWidget(button_students)
+            button_students = QPushButton('Ученики')
+            button_students.setStyleSheet(
+                'font-size: 24px; color: yellow; background-color: lime;')
+            button_students.clicked.connect(self.create_table_student)
+            button_layout.addWidget(button_students)
 
-        self.dop_frame.setLayout(button_layout)
+            self.dop_frame.setLayout(button_layout)
+        except Exception as error:
+            self.message_errore(error)
 
     def setup_table_filter(self, table):
 
@@ -400,33 +416,88 @@ class MainAdmin(QMainWindow):
 
         self.table_layout.addLayout(button_layout)
 
+    # def add_user(self, role, table):
+    #     self.user_dialog = UserDialog(self, role, table, self.db)
+    #     self.user_dialog.show()
+
+    # def delete_user(self, role, table):
+    #     user_id, login = self.get_selected_user(table)
+    #     self.db.delete_user(user_id, role, table)
+
+    # def edit_user(self, role, table):
+    #     user_id, login = self.get_selected_user(table)
+    #     self.user_dialog = EditUserDialog(
+    #         self, role, table, self.db, user_id, login)
+    #     self.user_dialog.show()
+
+    # def export_user(self, role, table):
+    #     file_dialog = QFileDialog()
+    #     file_dialog.setNameFilters(["CSV files (*.csv)", "All files (*.*)"])
+    #     file_dialog.selectNameFilter("CSV files (*.csv)")
+
+    #     if file_dialog.exec_():
+    #         file_path = file_dialog.selectedFiles()[0]
+    #         if file_path:
+    #             self.db.import_users(file_path, role, table)
+
+    # def add_student(self, table):
+    #     self.student_dialog = StudentDialog(self, table, self.db)
+    #     self.student_dialog.show()
+
+
     def add_user(self, role, table):
-        self.user_dialog = UserDialog(self, role, table, self.db)
-        self.user_dialog.show()
+        try:
+            self.user_dialog = UserDialog(self, role, table, self.db)
+            self.user_dialog.show()
+        except Exception as error:
+            self.message_errore(str(error))
 
     def delete_user(self, role, table):
-        user_id, login = self.get_selected_user(table)
-        self.db.delete_user(user_id, role, table)
+        try:
+            user_id, login = self.get_selected_user(table)
+            self.db.delete_user(user_id, role, table)
+        except Exception as error:
+            self.message_errore(str(error))
 
     def edit_user(self, role, table):
-        user_id, login = self.get_selected_user(table)
-        self.user_dialog = EditUserDialog(
-            self, role, table, self.db, user_id, login)
-        self.user_dialog.show()
+        try:
+            user_id, login = self.get_selected_user(table)
+            self.user_dialog = EditUserDialog(
+                self, role, table, self.db, user_id, login)
+            self.user_dialog.show()
+        except Exception as error:
+            self.message_errore(str(error))
 
     def export_user(self, role, table):
-        file_dialog = QFileDialog()
-        file_dialog.setNameFilters(["CSV files (*.csv)", "All files (*.*)"])
-        file_dialog.selectNameFilter("CSV files (*.csv)")
+        try:
+            file_dialog = QFileDialog()
+            file_dialog.setNameFilters(["CSV files (*.csv)", "All files (*.*)"])
+            file_dialog.selectNameFilter("CSV files (*.csv)")
 
-        if file_dialog.exec_():
-            file_path = file_dialog.selectedFiles()[0]
-            if file_path:
-                self.db.import_users(file_path, role, table)
+            if file_dialog.exec_():
+                file_path = file_dialog.selectedFiles()[0]
+                if file_path:
+                    self.db.import_users(file_path, role, table)
+        except Exception as error:
+            self.message_errore(str(error))
 
     def add_student(self, table):
-        self.student_dialog = StudentDialog(self, table, self.db)
-        self.student_dialog.show()
+        try:
+            self.student_dialog = StudentDialog(self, table, self.db)
+            self.student_dialog.show()
+        except Exception as error:
+            self.message_errore(str(error))
+
+    def edit_student(self, table):
+        try:
+            user_id, login = self.get_selected_user(table)
+            self.user_dialog_student = EditStudentDialog(
+                self, table, self.db, user_id, login)
+            self.user_dialog_student.show()
+        except Exception as error:
+            self.message_errore(str(error))
+
+
 
     def edit_student(self, table):
         user_id, login = self.get_selected_user(table)
@@ -719,7 +790,7 @@ class MainAdmin(QMainWindow):
 class UserDialog(QDialog):
     def __init__(self, main_admin, role, table, db, parent=None):
         super().__init__(parent)
-        self.main_admin = main_admin  # Сохраняем экземпляр MainAdmin
+        self.main_admin = main_admin
         self.db = db
 
         self.setWindowTitle('Добавить пользователя')

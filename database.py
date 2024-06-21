@@ -7,10 +7,146 @@ class DataBase:
     def __init__(self):
         self.conn = sqlite3.connect('database.db')
         self.cur = self.conn.cursor()
-        # self.create_tables()
+        self.create_tables()
 
-    # def create_tables():
-    #     pass
+    def create_tables(self):
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS Administrator (
+            ID       INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            FullName TEXT    NOT NULL,
+            Login    TEXT    NOT NULL,
+            Password TEXT    NOT NULL
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS cursorator (
+            ID       INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            FullName TEXT    NOT NULL,
+            Login    TEXT    NOT NULL,
+            Password TEXT    NOT NULL
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS Teacher (
+            ID       INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            FullName TEXT    NOT NULL,
+            Login    TEXT    NOT NULL,
+            Password TEXT    NOT NULL
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS Branch (
+            ID         INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            BranchName TEXT    NOT NULL
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS Student (
+            ID       INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            FullName TEXT    NOT NULL,
+            Login    TEXT    NOT NULL,
+            Password TEXT    NOT NULL,
+            BranchID INTEGER,
+            FOREIGN KEY (
+                BranchID
+            )
+            REFERENCES Branch (ID) 
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS `Group` (
+            ID             INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            Name           TEXT    NOT NULL,
+            cursoratorID      INTEGER,
+            DateOfCreation TEXT    DEFAULT (strftime('%d-%m-%Y', 'now') ),
+            FOREIGN KEY (
+                cursoratorID
+            )
+            REFERENCES cursorator (ID) 
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS GroupTeacher (
+            ID        INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            GroupID   INTEGER REFERENCES [Group] (ID) ON DELETE CASCADE
+                                                    ON UPDATE CASCADE,
+            TeacherID INTEGER REFERENCES Teacher (ID) ON DELETE CASCADE
+                                                    ON UPDATE CASCADE,
+            FOREIGN KEY (
+                GroupID
+            )
+            REFERENCES [Group] (ID),
+            FOREIGN KEY (
+                TeacherID
+            )
+            REFERENCES Teacher (ID) 
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS GroupStudent (
+            ID        INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            GroupID   INTEGER REFERENCES [Group] (ID) ON DELETE CASCADE
+                                                    ON UPDATE CASCADE,
+            StudentID INTEGER REFERENCES Student (ID) ON DELETE CASCADE
+                                                    ON UPDATE CASCADE,
+            FOREIGN KEY (
+                GroupID
+            )
+            REFERENCES [Group] (ID),
+            FOREIGN KEY (
+                StudentID
+            )
+            REFERENCES Student (ID) 
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS Test (
+            ID INTEGER PRIMARY KEY,
+            TeacherID INTEGER,
+            GroupID INTEGER,
+            Name TEXT NOT NULL,
+            AttemptCount INTEGER,
+            DateAdded TEXT,
+            FOREIGN KEY (TeacherID) REFERENCES Teacher(ID),
+            FOREIGN KEY (GroupID) REFERENCES `Group`(ID)
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS TestContent (
+            ID INTEGER PRIMARY KEY,
+            TestID INTEGER,
+            Question TEXT NOT NULL,
+            Answers TEXT NOT NULL,
+            CorrectAnswer TEXT NOT NULL,
+            FOREIGN KEY (TestID) REFERENCES Test(ID)
+        );
+        ''')
+
+        self.cur.execute('''
+        CREATE TABLE IF NOT EXISTS TestResult (
+            ID INTEGER PRIMARY KEY,
+            TestID INTEGER,
+            StudentID INTEGER,
+            CorrectAnswerCount INTEGER,
+            CorrectAnswerPercent INTEGER,
+            TestTime TEXT,
+            Grade TEXT,
+            Attempt TEXT,
+            FOREIGN KEY (TestID) REFERENCES Test(ID),
+            FOREIGN KEY (StudentID) REFERENCES Student(ID)
+        );
+        ''')
+
+        self.conn.commit()
 
     def verification_of_authorization(self, login, password):
         self.cur.execute(
