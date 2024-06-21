@@ -103,15 +103,16 @@ class MainAdmin(QMainWindow):
 
     def message_errore(self, error):
         message = QMessageBox()
-        message.setStyleSheet("background-color: white;")  # Установка белого фона
+        # Установка белого фона
+        message.setStyleSheet("background-color: white;")
         message.setText(error)
-        
+
         # Центрирование окна сообщения
         qr = message.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         message.move(qr.topLeft())
-        
+
         message.exec_()
 
     def init_ui(self):
@@ -444,7 +445,6 @@ class MainAdmin(QMainWindow):
     #     self.student_dialog = StudentDialog(self, table, self.db)
     #     self.student_dialog.show()
 
-
     def add_user(self, role, table):
         try:
             self.user_dialog = UserDialog(self, role, table, self.db)
@@ -471,7 +471,8 @@ class MainAdmin(QMainWindow):
     def export_user(self, role, table):
         try:
             file_dialog = QFileDialog()
-            file_dialog.setNameFilters(["CSV files (*.csv)", "All files (*.*)"])
+            file_dialog.setNameFilters(
+                ["CSV files (*.csv)", "All files (*.*)"])
             file_dialog.selectNameFilter("CSV files (*.csv)")
 
             if file_dialog.exec_():
@@ -496,8 +497,6 @@ class MainAdmin(QMainWindow):
             self.user_dialog_student.show()
         except Exception as error:
             self.message_errore(str(error))
-
-
 
     def edit_student(self, table):
         user_id, login = self.get_selected_user(table)
