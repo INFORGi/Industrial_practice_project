@@ -19,11 +19,7 @@ class AuthorizationWindow(QWidget):
     def init_ui(self):
         self.setWindowTitle('Авторизация')
         self.setGeometry(100, 100, 800, 600)
-
-        # Устанавливаем основной цвет фона окна
         self.setStyleSheet(f'background-color: {self.main_color};')
-
-        # Центрирование окна
         self.center_window()
 
         layout = QVBoxLayout()
@@ -69,7 +65,6 @@ class AuthorizationWindow(QWidget):
         user, role = self.db.verification_of_authorization(login, password)
         if user is not None:
             msg_box = QMessageBox(self)
-            # Установка белого фона и черного текста
             msg_box.setStyleSheet('background-color: white; color: black;')
             msg_box.setIcon(QMessageBox.Information)
             msg_box.setWindowTitle('Успех')
@@ -84,7 +79,6 @@ class AuthorizationWindow(QWidget):
                 self.close()
         else:
             msg_box = QMessageBox(self)
-            # Установка белого фона и черного текста
             msg_box.setStyleSheet('background-color: white; color: black;')
             msg_box.setIcon(QMessageBox.Critical)
             msg_box.setWindowTitle('Ошибка')
@@ -572,7 +566,8 @@ class MainAdmin(QMainWindow):
         teacher_layout.setContentsMargins(0, 0, 0, 0)
 
         label_teacher = QLabel("Таблица преподавателей")
-        label_teacher.setStyleSheet('background-color: White; color: Purple; font-size: 24px;')
+        label_teacher.setStyleSheet(
+            'background-color: White; color: Yellow; font-size: 24px;')
         label_teacher.setAlignment(Qt.AlignCenter)
         teacher_layout.addWidget(label_teacher)
 
@@ -618,7 +613,8 @@ class MainAdmin(QMainWindow):
         student_layout.setContentsMargins(0, 0, 0, 0)
 
         label_student = QLabel("Таблица учащихся")
-        label_student.setStyleSheet('background-color: White; color: Purple; font-size: 24px;')
+        label_student.setStyleSheet(
+            'background-color: White; color: #A5260A; font-size: 24px;')
         label_student.setAlignment(Qt.AlignCenter)
         student_layout.addWidget(label_student)
 
@@ -695,7 +691,7 @@ class MainAdmin(QMainWindow):
     def add_teather_in_group(self):
         group_id = self.on_group_selection_changed(self.table_group)
 
-        self.add_in_group = AddStudentInGroup(
+        self.add_in_group = AddTeatcherInGroup(
             group_id, self.db, self.model_teacher, 0)
         self.add_in_group.show()
 
@@ -1043,6 +1039,56 @@ class AddStudentInGroup(QDialog):
         self.db.fill_list(self.list_widget, self.code)
 
         label2 = QLabel("Добавляемые учащиеся")
+        label2.setAlignment(Qt.AlignCenter)
+        self.list_widget2 = QListWidget()
+        self.list_widget2.itemClicked.connect(self.deselect_item)
+
+        self.button = QPushButton("Добавить в группу")
+        self.button.clicked.connect(self.adding_a_record)
+
+        self.layout.addWidget(label1, 0, 0)
+        self.layout.addWidget(self.list_widget, 1, 0)
+        self.layout.addWidget(label2, 0, 1)
+        self.layout.addWidget(self.list_widget2, 1, 1)
+        self.layout.addWidget(self.button, 2, 0, 1, 2)
+
+    def select_item(self, item):
+        self.list_widget2.addItem(item.text())
+        self.list_widget.takeItem(self.list_widget.row(item))
+
+    def deselect_item(self, item):
+        self.list_widget.addItem(item.text())
+        self.list_widget2.takeItem(self.list_widget2.row(item))
+
+    def adding_a_record(self):
+        for i in range(self.list_widget2.count()):
+            item_text = self.list_widget2.item(i).text()
+            data = item_text.split(' / ')
+            self.db.add_student_to_group(
+                self.group_id, data[0], self.model, self.code)
+
+        self.close()
+
+
+class AddTeatcherInGroup(QDialog):
+    def __init__(self, group_id, db, model, code, parent=None):
+        super().__init__(parent)
+
+        self.group_id = group_id
+        self.db = db
+        self.model = model
+        self.code = code
+
+        self.setWindowTitle('Добавить преподавателя в группу')
+        self.layout = QGridLayout(self)
+
+        label1 = QLabel("Список преподавателей")
+        label1.setAlignment(Qt.AlignCenter)
+        self.list_widget = QListWidget()
+        self.list_widget.itemClicked.connect(self.select_item)
+        self.db.fill_list(self.list_widget, self.code)
+
+        label2 = QLabel("Добавляемые преподаватели")
         label2.setAlignment(Qt.AlignCenter)
         self.list_widget2 = QListWidget()
         self.list_widget2.itemClicked.connect(self.deselect_item)

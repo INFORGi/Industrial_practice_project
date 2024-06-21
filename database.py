@@ -394,7 +394,7 @@ class DataBase:
                 INNER JOIN Branch ON Student.BranchID = Branch.ID
                 WHERE GroupStudent.GroupID = ?
             """, (group_id,))
-            
+
             students = self.cur.fetchall()
 
             for student in students:
