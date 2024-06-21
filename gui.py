@@ -199,11 +199,43 @@ class MainAdmin(QMainWindow):
 
         self.dop_frame.setLayout(button_layout)
 
+    # def setup_table_filter(self, table):
+    #     proxy_model = QSortFilterProxyModel()
+    #     proxy_model.setSourceModel(table.model())
+    #     proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
+    #     proxy_model.setFilterKeyColumn(-1)
+
+    #     table.setModel(proxy_model)
+
+    #     s_layout = QHBoxLayout()
+
+    #     search_label = QLabel("Поиск: ")
+    #     search_label.setStyleSheet('background-color: White; font-size: 18px;')
+    #     s_layout.addWidget(search_label)
+
+    #     filter_line_edit = QLineEdit()
+    #     filter_line_edit.setStyleSheet(
+    #         'background-color: White; font-size: 18px;')
+    #     filter_line_edit.textChanged.connect(
+    #         lambda text: proxy_model.setFilterFixedString(text))
+    #     s_layout.addWidget(filter_line_edit)
+
+    #     self.table_layout.addLayout(s_layout)
+
     def setup_table_filter(self, table):
-        proxy_model = QSortFilterProxyModel()
+
+        class CustomFilterProxyModel(QSortFilterProxyModel):
+            def filterAcceptsRow(self, source_row, source_parent):
+                model = self.sourceModel()
+                for column in [1, 2, 4]:
+                    index = model.index(source_row, column, source_parent)
+                    if self.filterRegExp().indexIn(str(model.data(index))) >= 0:
+                        return True
+                return False
+
+        proxy_model = CustomFilterProxyModel()
         proxy_model.setSourceModel(table.model())
         proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        proxy_model.setFilterKeyColumn(-1)
 
         table.setModel(proxy_model)
 
