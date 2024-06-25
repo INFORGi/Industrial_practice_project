@@ -549,14 +549,14 @@ class MainAdmin(QMainWindow):
         if group_id != 0:
             self.db.delete_group(group_id, self.model_group)
 
+
+
     def click_button_group(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
             self.dop_frame.deleteLater()
             self.dop_frame = None
 
         self.clear_table_layout()
-
-        margins = self.frame_table.contentsMargins()
 
         # Группы
 
@@ -572,10 +572,10 @@ class MainAdmin(QMainWindow):
         self.table_group.setStyleSheet(
             'background-color: White; font-size: 15px;')
 
-        height_group = int(self.frame_table.height(
-        ) - label_group.height()/2 - margins.bottom() - margins.top())
+        # int(self.frame_table.height() - label_group.height()/2 - margins.bottom() - margins.top())
+        height = 450
 
-        self.table_group.setFixedHeight(height_group)
+        self.table_group.setFixedHeight(height)
 
         self.model_group.setHorizontalHeaderLabels(
             ["ID", "Название", "Описание"])
@@ -622,8 +622,6 @@ class MainAdmin(QMainWindow):
         self.table_teacher.setStyleSheet(
             'background-color: White; font-size: 15px;')
         self.model_teacher.setHorizontalHeaderLabels(["ID", "Имя", "Логин"])
-
-        height = int(height_group/2)
 
         self.table_teacher.setFixedHeight(height)
 
@@ -710,6 +708,7 @@ class MainAdmin(QMainWindow):
         test_layout = QVBoxLayout(test_container)
         test_layout.setContentsMargins(0, 0, 0, 0)
 
+
         label_test = QLabel("Таблица тестов")
         label_test.setStyleSheet(
             'background-color: White; color: #A5260A; font-size: 24px;')
@@ -762,6 +761,8 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+
 
     def add_group_table_buttons(self):
         button_layout = QHBoxLayout()
@@ -838,10 +839,10 @@ class MainAdmin(QMainWindow):
         if selected_indexes:
             row = selected_indexes[0].row()
             model = self.table_test.model()
-            
+
             id_test = model.data(model.index(row, 0))
             id_group = model.data(model.index(row, 2))
-            
+
             self.db.delete_test_group(id_test, model, id_group)
         else:
             QMessageBox.warning(
@@ -858,17 +859,17 @@ class UserDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.fullname_label = QLabel('FullName')
+        self.fullname_label = QLabel('ФИО')
         self.fullname_input = QLineEdit()
         self.layout.addWidget(self.fullname_label)
         self.layout.addWidget(self.fullname_input)
 
-        self.login_label = QLabel('Login')
+        self.login_label = QLabel('Логин')
         self.login_input = QLineEdit()
         self.layout.addWidget(self.login_label)
         self.layout.addWidget(self.login_input)
 
-        self.password_label = QLabel('Password')
+        self.password_label = QLabel('Пароль')
         self.password_input = QLineEdit()
         self.layout.addWidget(self.password_label)
         self.layout.addWidget(self.password_input)
@@ -899,22 +900,22 @@ class StudentDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.fullname_label = QLabel('FullName')
+        self.fullname_label = QLabel('ФИО')
         self.fullname_input = QLineEdit()
         self.layout.addWidget(self.fullname_label)
         self.layout.addWidget(self.fullname_input)
 
-        self.login_label = QLabel('Login')
+        self.login_label = QLabel('Логин')
         self.login_input = QLineEdit()
         self.layout.addWidget(self.login_label)
         self.layout.addWidget(self.login_input)
 
-        self.password_label = QLabel('Password')
+        self.password_label = QLabel('Пароль')
         self.password_input = QLineEdit()
         self.layout.addWidget(self.password_label)
         self.layout.addWidget(self.password_input)
 
-        self.branch_label = QLabel('Branch')
+        self.branch_label = QLabel('Филиал')
         self.branch_combo = QComboBox()
         self.layout.addWidget(self.branch_label)
         self.layout.addWidget(self.branch_combo)
@@ -1007,23 +1008,23 @@ class EditStudentDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.fullname_label = QLabel('FullName')
+        self.fullname_label = QLabel('ФИО')
         self.fullname_input = QLineEdit(user_info['name'])
         self.layout.addWidget(self.fullname_label)
         self.layout.addWidget(self.fullname_input)
 
-        self.login_label = QLabel('Login')
+        self.login_label = QLabel('Логин')
         self.login_input = QLineEdit(user_info['login'])
         self.layout.addWidget(self.login_label)
         self.layout.addWidget(self.login_input)
 
-        self.password_label = QLabel('Password')
+        self.password_label = QLabel('Пароль')
         self.password_input = QLineEdit(user_info['password'])
         self.layout.addWidget(self.password_label)
         self.layout.addWidget(self.password_input)
 
         # Добавляем комбобокс для веток
-        self.branch_label = QLabel('branch')
+        self.branch_label = QLabel('Филиал')
         self.branch_combo = QComboBox()
         self.layout.addWidget(self.branch_label)
         self.layout.addWidget(self.branch_combo)
@@ -1308,24 +1309,37 @@ class TestDialog(QDialog):
         self.add_button.clicked.connect(lambda: self.add_test(table))
         self.layout.addWidget(self.add_button)
 
-
     def fill_combos(self):
         teachers = self.db.get_all_teachers()
         for teacher in teachers:
-            item = QStandardItem(str(teacher[1]))  # Используйте индекс вместо ключа
-            item.setData(teacher[0])  # Используйте индекс вместо ключа
+            # Используйте индекс вместо ключа
+            item = QStandardItem(str(teacher[1]))
+            # Используйте Qt.UserRole для установки данных
+            item.setData(teacher[0], Qt.UserRole)
             self.teacher_model.appendRow(item)
+        if self.teacher_model.rowCount() > 0:
+            self.teacher_combo.setCurrentIndex(
+                0)  # Устанавливаем текущий индекс
 
         groups = self.db.get_all_groups()
         for group in groups:
-            item = QStandardItem(str(group[1]))  # Используйте индекс вместо ключа
-            item.setData(group[0])  # Используйте индекс вместо ключа
+            # Используйте индекс вместо ключа
+            item = QStandardItem(str(group[1]))
+            # Используйте Qt.UserRole для установки данных
+            item.setData(group[0], Qt.UserRole)
             self.group_model.appendRow(item)
-
+        if self.group_model.rowCount() > 0:
+            self.group_combo.setCurrentIndex(0)  # Устанавливаем текущий индекс
 
     def add_test(self, table):
-        teacher_id = self.teacher_combo.currentData()
-        group_id = self.group_combo.currentData()
+        selected_teacher_index = self.teacher_combo.currentIndex()
+        selected_teacher_item = self.teacher_model.item(selected_teacher_index)
+        teacher_id = selected_teacher_item.data(Qt.UserRole)
+
+        selected_group_index = self.group_combo.currentIndex()
+        selected_group_item = self.group_model.item(selected_group_index)
+        group_id = selected_group_item.data(Qt.UserRole)
+
         name = self.name_input.text()
         attempts = self.attempts_input.text()
         time = self.time_input.text()
@@ -1335,5 +1349,3 @@ class TestDialog(QDialog):
         self.db.add_test(teacher_id, group_id, name, attempts, time, model)
 
         self.close()
-
-
