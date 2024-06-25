@@ -20,7 +20,7 @@ class DataBase:
         ''')
 
         self.cur.execute('''
-        CREATE TABLE IF NOT EXISTS cursorator (
+        CREATE TABLE IF NOT EXISTS Curator (
             ID       INTEGER PRIMARY KEY ASC AUTOINCREMENT,
             FullName TEXT    NOT NULL,
             Login    TEXT    NOT NULL,
@@ -62,12 +62,12 @@ class DataBase:
         CREATE TABLE IF NOT EXISTS `Group` (
             ID             INTEGER PRIMARY KEY ASC AUTOINCREMENT,
             Name           TEXT    NOT NULL,
-            cursoratorID      INTEGER,
+            CuratorID      INTEGER,
             DateOfCreation TEXT    DEFAULT (strftime('%d-%m-%Y', 'now') ),
             FOREIGN KEY (
-                cursoratorID
+                CuratorID
             )
-            REFERENCES cursorator (ID) 
+            REFERENCES Curator (ID) 
         );
         ''')
 
@@ -109,14 +109,22 @@ class DataBase:
 
         self.cur.execute('''
         CREATE TABLE IF NOT EXISTS Test (
-            ID INTEGER PRIMARY KEY,
-            TeacherID INTEGER,
-            GroupID INTEGER,
-            Name TEXT NOT NULL,
+            ID           INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            TeacherID    INTEGER,
+            GroupID      INTEGER,
+            Name         TEXT    NOT NULL,
             AttemptCount INTEGER,
-            DateAdded TEXT,
-            FOREIGN KEY (TeacherID) REFERENCES Teacher(ID),
-            FOREIGN KEY (GroupID) REFERENCES `Group`(ID)
+            DateAdded    TEXT,
+            TimeTakeTest INTEGER NOT NULL
+                                DEFAULT (strftime('%d-%m-%Y', 'now') ),
+            FOREIGN KEY (
+                TeacherID
+            )
+            REFERENCES Teacher (ID),
+            FOREIGN KEY (
+                GroupID
+            )
+            REFERENCES [Group] (ID) 
         );
         ''')
 
@@ -301,7 +309,7 @@ class DataBase:
                 self.cur.execute(
                     "INSERT INTO GroupTeacher (GroupID, TeacherID) VALUES (?, ?)", (group_id, user_id))
                 self.conn.commit()
-                self.get_data_teachers_and_students(model, group_id, 0)
+                self.get_data_teachers_students_test(model, group_id, 0)
 
         if code == 1:
             self.cur.execute(
@@ -311,20 +319,20 @@ class DataBase:
                 self.cur.execute(
                     "INSERT INTO GroupStudent (GroupID, StudentID) VALUES (?, ?)", (group_id, user_id))
                 self.conn.commit()
-                self.get_data_teachers_and_students(model, group_id, 1)
+                self.get_data_teachers_students_test(model, group_id, 1)
 
     def remove_from_group(self, group_id, user_id, model, code):
         if code == 0:
             self.cur.execute(
                 "DELETE FROM GroupTeacher WHERE GroupID = ? AND TeacherID = ?", (group_id, user_id))
             self.conn.commit()
-            self.get_data_teachers_and_students(model, group_id, 0)
+            self.get_data_teachers_students_test(model, group_id, 0)
 
         if code == 1:
             self.cur.execute(
                 "DELETE FROM GroupStudent WHERE GroupID = ? AND StudentID = ?", (group_id, user_id))
             self.conn.commit()
-            self.get_data_teachers_and_students(model, group_id, 1)
+            self.get_data_teachers_students_test(model, group_id, 1)
 
     def import_users(self, file_path, role, table):
         data = pd.read_csv(file_path, header=None)
@@ -345,36 +353,6 @@ class DataBase:
                                      (user_data[0], user_data[1], user_data[2]))
                 self.conn.commit()
                 self.populate_treeview(table.model().sourceModel(), role)
-
-    def populate_treeview(self, model, role):
-        model.clear()
-
-        if role == 0:
-            self.cur.execute(
-                "SELECT ID, FullName, Login, Password FROM Administrator")
-            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
-        elif role == 1:
-            self.cur.execute(
-                "SELECT ID, FullName, Login, Password FROM Curator")
-            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
-        elif role == 2:
-            self.cur.execute(
-                "SELECT ID, FullName, Login, Password FROM Teacher")
-            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
-        elif role == 3:
-            self.cur.execute("""
-                        SELECT Student.ID, Student.FullName, Student.Login, Student.Password, Branch.BranchName
-                        FROM Student
-                        INNER JOIN Branch ON Student.BranchID = Branch.ID
-                    """)
-            model.setHorizontalHeaderLabels(
-                ["ID", "Имя", "Логин", "Пароль", "Филиал"])
-
-        users = self.cur.fetchall()
-
-        for user in users:
-            items = [QStandardItem(str(field)) for field in user]
-            model.appendRow(items)
 
     def edit_user(self, name, login, password, role, table, user_id):
         self.cur.execute("""
@@ -474,6 +452,36 @@ class DataBase:
         model.setHorizontalHeaderLabels(
             ["ID", "Название", "Куратор (создаетль)", "Дата создания группы"])
 
+    def populate_treeview(self, model, role):
+        model.clear()
+
+        if role == 0:
+            self.cur.execute(
+                "SELECT ID, FullName, Login, Password FROM Administrator")
+            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
+        elif role == 1:
+            self.cur.execute(
+                "SELECT ID, FullName, Login, Password FROM Curator")
+            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
+        elif role == 2:
+            self.cur.execute(
+                "SELECT ID, FullName, Login, Password FROM Teacher")
+            model.setHorizontalHeaderLabels(["ID", "Имя", "Логин", "Пароль"])
+        elif role == 3:
+            self.cur.execute("""
+                        SELECT Student.ID, Student.FullName, Student.Login, Student.Password, Branch.BranchName
+                        FROM Student
+                        INNER JOIN Branch ON Student.BranchID = Branch.ID
+                    """)
+            model.setHorizontalHeaderLabels(
+                ["ID", "Имя", "Логин", "Пароль", "Филиал"])
+
+        users = self.cur.fetchall()
+
+        for user in users:
+            items = [QStandardItem(str(field)) for field in user]
+            model.appendRow(items)  
+
     def update_group(self, group_id, groupname, curator_id, model):
         try:
             self.cur.execute("""
@@ -505,7 +513,7 @@ class DataBase:
 
         self.populate_treeview_group(model)
 
-    def get_data_teachers_and_students(self, model, group_id, code):
+    def get_data_teachers_students_test(self, model, group_id, code):
 
         model.removeRows(0, model.rowCount())
 
@@ -537,6 +545,21 @@ class DataBase:
                 items = [QStandardItem(str(field)) for field in student]
                 model.appendRow(items)
 
+        elif code == 2:
+            self.cur.execute("""
+                SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
+                FROM Test
+                INNER JOIN Teacher ON Test.TeacherID = Teacher.ID
+                INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
+                WHERE Test.GroupID = ?
+            """, (group_id,))
+
+            tests = self.cur.fetchall()
+
+            for test in tests:
+                items = [QStandardItem(str(field)) for field in test]
+                model.appendRow(items)
+
     def fill_list(self, list, code):
         if code == 0:
             self.cur.execute("SELECT * FROM Teacher")
@@ -548,3 +571,39 @@ class DataBase:
         for i in range(len(data)):
             item_text = ' / '.join(str(value) for value in data[i])
             list.insertItem(i, item_text)
+
+    def get_all_teachers(self):
+        self.cur.execute("SELECT ID, FullName FROM Teacher")
+        teacher = self.cur.fetchall()
+        return teacher
+
+    def get_all_groups(self):
+        self.cur.execute("SELECT ID, Name FROM 'Group'")
+        group = self.cur.fetchall()
+        return group
+
+    def add_test(self, teacher_id, group_id, name, attempts, time, model):
+        
+        model.clear()
+        
+        self.cur.execute("""
+        INSERT INTO Test (TeacherID, GroupID, Name, AttemptCount, TimeTakeTest, DateAdded)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        """, (teacher_id, group_id, name, attempts, time))
+        
+        self.conn.commit()
+        
+        self.cur.execute("SELECT * FROM Test WHERE GroupID = ?", (group_id,))
+        
+        rows = self.cur.fetchall()
+        for row in rows:
+            items = [QStandardItem(str(field)) for field in row]
+            model.appendRow(items)
+        model.setHorizontalHeaderLabels(
+            ["ID", "Преподаватель", "Группа", "Название", "Попытки", "Общее время прохождения теста", "Дата добавления"])
+
+    def delete_test_group(self, id_test, model, id_group):
+        self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
+        self.conn.commit()
+        self.get_data_teachers_students_test(model, id_group, 2)
+        

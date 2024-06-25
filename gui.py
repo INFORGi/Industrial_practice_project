@@ -417,34 +417,6 @@ class MainAdmin(QMainWindow):
 
         self.table_layout.addLayout(button_layout)
 
-    # def add_user(self, role, table):
-    #     self.user_dialog = UserDialog(self, role, table, self.db)
-    #     self.user_dialog.show()
-
-    # def delete_user(self, role, table):
-    #     user_id, login = self.get_selected_user(table)
-    #     self.db.delete_user(user_id, role, table)
-
-    # def edit_user(self, role, table):
-    #     user_id, login = self.get_selected_user(table)
-    #     self.user_dialog = EditUserDialog(
-    #         self, role, table, self.db, user_id, login)
-    #     self.user_dialog.show()
-
-    # def export_user(self, role, table):
-    #     file_dialog = QFileDialog()
-    #     file_dialog.setNameFilters(["CSV files (*.csv)", "All files (*.*)"])
-    #     file_dialog.selectNameFilter("CSV files (*.csv)")
-
-    #     if file_dialog.exec_():
-    #         file_path = file_dialog.selectedFiles()[0]
-    #         if file_path:
-    #             self.db.import_users(file_path, role, table)
-
-    # def add_student(self, table):
-    #     self.student_dialog = StudentDialog(self, table, self.db)
-    #     self.student_dialog.show()
-
     def add_user(self, role, table):
         try:
             self.user_dialog = UserDialog(self, role, table, self.db)
@@ -534,26 +506,6 @@ class MainAdmin(QMainWindow):
                                     elif item.layout():
                                         self.clear_table_layout(item.layout())
 
-    def add_group_table_buttons(self):
-        button_layout = QHBoxLayout()
-
-        button_add = QPushButton('Добавить группу')
-        button_add.setStyleSheet('color: black; background-color: white;')
-        button_add.clicked.connect(self.add_group)
-        button_layout.addWidget(button_add)
-
-        button_edit = QPushButton('Редактировать группу')
-        button_edit.setStyleSheet('color: black; background-color: white;')
-        button_edit.clicked.connect(self.edit_group)
-        button_layout.addWidget(button_edit)
-
-        button_delet = QPushButton('Улалить группу')
-        button_delet.setStyleSheet('color: black; background-color: white;')
-        button_delet.clicked.connect(self.delete_group)
-        button_layout.addWidget(button_delet)
-
-        self.table_layout.addLayout(button_layout)
-
     def add_group(self):
         self.group_dialog = GroupAddDialog(self.db, self.model_group)
         self.group_dialog.show()
@@ -562,10 +514,10 @@ class MainAdmin(QMainWindow):
         selected_group = self.get_selected_group()
         if selected_group:
             group_id, groupname, curator_id = selected_group
-
-            self.group_edit_dialog = GroupEditDialog(
-                group_id, groupname, curator_id, self.db, self.model_group)
-            self.group_edit_dialog.show()
+            if group_id != 0:
+                self.group_edit_dialog = GroupEditDialog(
+                    group_id, groupname, curator_id, self.db, self.model_group)
+                self.group_edit_dialog.show()
 
     def get_selected_group(self):
         selected_indexes = self.table_group.selectionModel().selectedIndexes()
@@ -582,18 +534,20 @@ class MainAdmin(QMainWindow):
             if curator_id is None:
                 QMessageBox.warning(
                     self, 'Предупреждение', 'Не удалось получить ID куратора для выбранной группы.')
-                return None
+
+                return 0, 0, 0
 
             return group_id, groupname, curator_id
         else:
             QMessageBox.warning(
-                self, 'Предупреждение', 'Пожалуйста, выберите группу для редактирования.')
-            return None
+                self, 'Предупреждение', 'Пожалуйста, выберите группу.')
+            return 0, 0, 0
 
     def delete_group(self):
         group_id, _, _ = self.get_selected_group()
 
-        self.db.delete_group(group_id, self.model_group)
+        if group_id != 0:
+            self.db.delete_group(group_id, self.model_group)
 
     def click_button_group(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
@@ -601,6 +555,10 @@ class MainAdmin(QMainWindow):
             self.dop_frame = None
 
         self.clear_table_layout()
+
+        margins = self.frame_table.contentsMargins()
+
+        # Группы
 
         label_group = QLabel("Таблица группы")
         label_group.setStyleSheet(
@@ -613,6 +571,12 @@ class MainAdmin(QMainWindow):
         self.table_group.setModel(self.model_group)
         self.table_group.setStyleSheet(
             'background-color: White; font-size: 15px;')
+
+        height_group = int(self.frame_table.height(
+        ) - label_group.height()/2 - margins.bottom() - margins.top())
+
+        self.table_group.setFixedHeight(height_group)
+
         self.model_group.setHorizontalHeaderLabels(
             ["ID", "Название", "Описание"])
 
@@ -626,7 +590,7 @@ class MainAdmin(QMainWindow):
         self.table_group.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.table_group.selectionModel().selectionChanged.connect(
-            self.populate_teachers_and_students)
+            self.populate_teachers_students_teste)
 
         self.table_layout.addWidget(label_group)
         self.table_layout.addWidget(self.table_group)
@@ -659,6 +623,10 @@ class MainAdmin(QMainWindow):
             'background-color: White; font-size: 15px;')
         self.model_teacher.setHorizontalHeaderLabels(["ID", "Имя", "Логин"])
 
+        height = int(height_group/2)
+
+        self.table_teacher.setFixedHeight(height)
+
         header_teacher = self.table_teacher.horizontalHeader()
         header_teacher.setStyleSheet('font-size: 18px;')
         header_teacher.setSectionResizeMode(QHeaderView.Stretch)
@@ -674,7 +642,7 @@ class MainAdmin(QMainWindow):
 
         add_teacher_button = QPushButton("Добавить")
         add_teacher_button.setStyleSheet('background-color: White;')
-        add_teacher_button.clicked.connect(self.add_teather_in_group)
+        add_teacher_button.clicked.connect(self.add_teacher_in_group)
 
         delete_teacher_button = QPushButton("Удалить")
         delete_teacher_button.setStyleSheet('background-color: White;')
@@ -707,6 +675,8 @@ class MainAdmin(QMainWindow):
         self.model_student.setHorizontalHeaderLabels(
             ["ID", "Имя", "Логин", "Пароль", "Филиал"])
 
+        self.table_student.setFixedHeight(height)
+
         header_student = self.table_student.horizontalHeader()
         header_student.setStyleSheet('font-size: 18px;')
         header_student.setSectionResizeMode(QHeaderView.Stretch)
@@ -734,17 +704,84 @@ class MainAdmin(QMainWindow):
         student_layout.addWidget(self.table_student)
         student_layout.addWidget(student_button_container)
 
-        teachers_students_container = QWidget()
-        teachers_students_layout = QHBoxLayout(teachers_students_container)
-        teachers_students_layout.addWidget(teacher_container)
-        teachers_students_layout.addWidget(student_container)
+        # Тесты
 
-        self.table_layout.addWidget(teachers_students_container)
+        test_container = QWidget()
+        test_layout = QVBoxLayout(test_container)
+        test_layout.setContentsMargins(0, 0, 0, 0)
+
+        label_test = QLabel("Таблица тестов")
+        label_test.setStyleSheet(
+            'background-color: White; color: #A5260A; font-size: 24px;')
+        label_test.setAlignment(Qt.AlignCenter)
+        test_layout.addWidget(label_test)
+
+        self.model_test = QStandardItemModel(self.frame_table)
+        self.model_test.setColumnCount(4)
+        self.table_test = QTableView(self.frame_table)
+        self.table_test.setModel(self.model_test)
+        self.table_test.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+        self.model_test.setHorizontalHeaderLabels(
+            ["ID", "Преподаватель", "Группа", "Название", "Попытки", "Общее время прохождения теста", "Дата добавления"])
+
+        self.table_test.setFixedHeight(height)
+
+        header_test = self.table_test.horizontalHeader()
+        header_test.setStyleSheet('font-size: 18px;')
+        header_test.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.table_test.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_test.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_test.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        test_button_container = QWidget()
+        test_button_layout = QHBoxLayout(test_button_container)
+
+        add_test_button = QPushButton("Добавить")
+        add_test_button.setStyleSheet('background-color: White;')
+        add_test_button.clicked.connect(self.add_test_in_group)
+
+        delete_test_button = QPushButton("Удалить")
+        delete_test_button.setStyleSheet('background-color: White;')
+        delete_test_button.clicked.connect(self.delete_test_in_group)
+
+        test_button_layout.addWidget(add_test_button)
+        test_button_layout.addWidget(delete_test_button)
+
+        test_layout.addWidget(self.table_test)
+        test_layout.addWidget(test_button_container)
+
+        self.table_layout.addWidget(test_container)
+        self.table_layout.addWidget(teacher_container)
+        self.table_layout.addWidget(student_container)
 
         self.frame_table.setContentsMargins(0, 0, 0, 0)
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+    def add_group_table_buttons(self):
+        button_layout = QHBoxLayout()
+
+        button_add = QPushButton('Добавить группу')
+        button_add.setStyleSheet('color: black; background-color: white;')
+        button_add.clicked.connect(self.add_group)
+        button_layout.addWidget(button_add)
+
+        button_edit = QPushButton('Редактировать группу')
+        button_edit.setStyleSheet('color: black; background-color: white;')
+        button_edit.clicked.connect(self.edit_group)
+        button_layout.addWidget(button_edit)
+
+        button_delet = QPushButton('Улалить группу')
+        button_delet.setStyleSheet('color: black; background-color: white;')
+        button_delet.clicked.connect(self.delete_group)
+        button_layout.addWidget(button_delet)
+
+        self.table_layout.addLayout(button_layout)
 
     def on_group_selection_changed(self, table):
         indexes = table.selectionModel().selectedRows()
@@ -752,14 +789,18 @@ class MainAdmin(QMainWindow):
             id = indexes[0].data()
             return id
 
-    def populate_teachers_and_students(self):
+    def populate_teachers_students_teste(self):
         self.model_teacher.removeRows(0, self.model_teacher.rowCount())
         self.model_student.removeRows(0, self.model_student.rowCount())
+        self.model_test.removeRows(0, self.model_test.rowCount())
 
         group_id = self.on_group_selection_changed(self.table_group)
 
-        self.db.get_data_teachers_and_students(self.model_teacher, group_id, 0)
-        self.db.get_data_teachers_and_students(self.model_student, group_id, 1)
+        self.db.get_data_teachers_students_test(
+            self.model_teacher, group_id, 0)
+        self.db.get_data_teachers_students_test(
+            self.model_student, group_id, 1)
+        self.db.get_data_teachers_students_test(self.model_test, group_id, 2)
 
     def add_student_in_group(self):
         group_id = self.on_group_selection_changed(self.table_group)
@@ -768,7 +809,7 @@ class MainAdmin(QMainWindow):
             group_id, self.db, self.model_student, 1)
         self.add_in_group.show()
 
-    def add_teather_in_group(self):
+    def add_teacher_in_group(self):
         group_id = self.on_group_selection_changed(self.table_group)
 
         self.add_in_group = AddTeatcherInGroup(
@@ -784,6 +825,27 @@ class MainAdmin(QMainWindow):
         group_id = self.on_group_selection_changed(self.table_group)
         user_id = self.on_group_selection_changed(self.table_teacher)
         self.db.remove_from_group(group_id, user_id, self.model_teacher, 0)
+
+    def add_test_in_group(self):
+        try:
+            self.test_dialog = TestDialog(self, self.table_test, self.db)
+            self.test_dialog.show()
+        except Exception as error:
+            self.message_errore(str(error))
+
+    def delete_test_in_group(self):
+        selected_indexes = self.table_test.selectionModel().selectedIndexes()
+        if selected_indexes:
+            row = selected_indexes[0].row()
+            model = self.table_test.model()
+            
+            id_test = model.data(model.index(row, 0))
+            id_group = model.data(model.index(row, 2))
+            
+            self.db.delete_test_group(id_test, model, id_group)
+        else:
+            QMessageBox.warning(
+                self, 'Предупреждение', 'Пожалуйста, выберите тест.')
 
 
 class UserDialog(QDialog):
@@ -1198,3 +1260,80 @@ class AddTeatcherInGroup(QDialog):
                 self.group_id, data[0], self.model, self.code)
 
         self.close()
+
+
+class TestDialog(QDialog):
+    def __init__(self, main_admin, table, db, parent=None):
+        super().__init__(parent)
+        self.main_admin = main_admin  # Сохраняем экземпляр MainAdmin
+        self.db = db
+
+        self.setWindowTitle('Добавить тест')
+
+        self.layout = QVBoxLayout(self)
+
+        self.teacher_label = QLabel('Преподаватель')
+        self.teacher_combo = QComboBox()
+        self.teacher_model = QStandardItemModel()  # Инициализируем модель
+        self.teacher_combo.setModel(self.teacher_model)
+        self.layout.addWidget(self.teacher_label)
+        self.layout.addWidget(self.teacher_combo)
+
+        self.group_label = QLabel('Группа')
+        self.group_combo = QComboBox()
+        self.group_model = QStandardItemModel()  # Инициализируем модель
+        self.group_combo.setModel(self.group_model)
+        self.layout.addWidget(self.group_label)
+        self.layout.addWidget(self.group_combo)
+
+        # Заполните комбо-боксы данными из базы данных
+        self.fill_combos()
+
+        self.name_label = QLabel('Название')
+        self.name_input = QLineEdit()
+        self.layout.addWidget(self.name_label)
+        self.layout.addWidget(self.name_input)
+
+        self.attempts_label = QLabel('Попытки')
+        self.attempts_input = QLineEdit()
+        self.layout.addWidget(self.attempts_label)
+        self.layout.addWidget(self.attempts_input)
+
+        self.time_label = QLabel('Общее время прохождения теста')
+        self.time_input = QLineEdit()
+        self.layout.addWidget(self.time_label)
+        self.layout.addWidget(self.time_input)
+
+        self.add_button = QPushButton('Добавить')
+        self.add_button.clicked.connect(lambda: self.add_test(table))
+        self.layout.addWidget(self.add_button)
+
+
+    def fill_combos(self):
+        teachers = self.db.get_all_teachers()
+        for teacher in teachers:
+            item = QStandardItem(str(teacher[1]))  # Используйте индекс вместо ключа
+            item.setData(teacher[0])  # Используйте индекс вместо ключа
+            self.teacher_model.appendRow(item)
+
+        groups = self.db.get_all_groups()
+        for group in groups:
+            item = QStandardItem(str(group[1]))  # Используйте индекс вместо ключа
+            item.setData(group[0])  # Используйте индекс вместо ключа
+            self.group_model.appendRow(item)
+
+
+    def add_test(self, table):
+        teacher_id = self.teacher_combo.currentData()
+        group_id = self.group_combo.currentData()
+        name = self.name_input.text()
+        attempts = self.attempts_input.text()
+        time = self.time_input.text()
+
+        model = table.model()
+
+        self.db.add_test(teacher_id, group_id, name, attempts, time, model)
+
+        self.close()
+
+
