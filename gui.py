@@ -410,7 +410,7 @@ class MainAdmin(QMainWindow):
         button_delete.clicked.connect(lambda: self.delete_user(role, table))
         button_layout.addWidget(button_delete)
 
-        button_export = QPushButton('Экспортировать пользователей')
+        button_export = QPushButton('Импортировать пользователей')
         button_export.setStyleSheet('color: black; background-color: white;')
         button_export.clicked.connect(lambda: self.export_user(role, table))
         button_layout.addWidget(button_export)
