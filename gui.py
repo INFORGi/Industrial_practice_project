@@ -146,7 +146,6 @@ class MainAdmin(QMainWindow):
         self.button_test.setStyleSheet(
             'font-size: 24px; background-color: Purple;')
         self.button_test.setFixedHeight(50)
-        self.button_test.clicked.connect(self.click_button_test)
         button_layout.addWidget(self.button_test)
 
         main_frame.setLayout(button_layout)
@@ -471,217 +470,6 @@ class MainAdmin(QMainWindow):
         except Exception as error:
             self.message_errore(str(error))
 
-    def click_button_group(self):
-        if hasattr(self, 'dop_frame') and self.dop_frame is not None:
-            self.dop_frame.deleteLater()
-            self.dop_frame = None
-
-        self.clear_table_layout()
-
-        # Группы
-
-        label_group = QLabel("Таблица группы")
-        label_group.setStyleSheet(
-            'background-color: White; color: Purple; font-size: 24px;')
-        label_group.setAlignment(Qt.AlignCenter)
-
-        self.model_group = QStandardItemModel(self.frame_table)
-        self.model_group.setColumnCount(3)
-        self.table_group = QTableView(self.frame_table)
-        self.table_group.setModel(self.model_group)
-        self.table_group.setStyleSheet(
-            'background-color: White; font-size: 15px;')
-
-        # int(self.frame_table.height() - label_group.height()/2 - margins.bottom() - margins.top())
-        height = 450
-
-        self.table_group.setFixedHeight(height)
-
-        self.model_group.setHorizontalHeaderLabels(
-            ["ID", "Название", "Описание"])
-
-        header_group = self.table_group.horizontalHeader()
-        header_group.setStyleSheet('font-size: 18px;')
-        header_group.setSectionResizeMode(QHeaderView.Stretch)
-
-        self.db.populate_treeview_group(self.model_group)
-
-        self.table_group.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table_group.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-        self.table_group.selectionModel().selectionChanged.connect(
-            self.populate_teachers_students_teste)
-
-        self.table_layout.addWidget(label_group)
-        self.table_layout.addWidget(self.table_group)
-
-        button_container = QWidget()
-        button_layout = QHBoxLayout(button_container)
-        self.add_group_table_buttons()
-        button_layout.addStretch()
-        button_layout.setAlignment(Qt.AlignRight)
-
-        self.table_layout.addWidget(button_container)
-
-        # Преподаватель
-
-        teacher_container = QWidget()
-        teacher_layout = QVBoxLayout(teacher_container)
-        teacher_layout.setContentsMargins(0, 0, 0, 0)
-
-        label_teacher = QLabel("Таблица преподавателей")
-        label_teacher.setStyleSheet(
-            'background-color: White; color: Yellow; font-size: 24px;')
-        label_teacher.setAlignment(Qt.AlignCenter)
-        teacher_layout.addWidget(label_teacher)
-
-        self.model_teacher = QStandardItemModel(self.frame_table)
-        self.model_teacher.setColumnCount(3)
-        self.table_teacher = QTableView(self.frame_table)
-        self.table_teacher.setModel(self.model_teacher)
-        self.table_teacher.setStyleSheet(
-            'background-color: White; font-size: 15px;')
-        self.model_teacher.setHorizontalHeaderLabels(["ID", "Имя", "Логин"])
-
-        self.table_teacher.setFixedHeight(height)
-
-        header_teacher = self.table_teacher.horizontalHeader()
-        header_teacher.setStyleSheet('font-size: 18px;')
-        header_teacher.setSectionResizeMode(QHeaderView.Stretch)
-
-        self.table_teacher.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.table_teacher.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table_teacher.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-        teacher_button_container = QWidget()
-        teacher_button_layout = QHBoxLayout(teacher_button_container)
-
-        add_teacher_button = QPushButton("Добавить")
-        add_teacher_button.setStyleSheet('background-color: White;')
-        add_teacher_button.clicked.connect(self.add_teacher_in_group)
-
-        delete_teacher_button = QPushButton("Удалить")
-        delete_teacher_button.setStyleSheet('background-color: White;')
-        delete_teacher_button.clicked.connect(self.delete_teacher_in_group)
-
-        teacher_button_layout.addWidget(add_teacher_button)
-        teacher_button_layout.addWidget(delete_teacher_button)
-
-        teacher_layout.addWidget(self.table_teacher)
-        teacher_layout.addWidget(teacher_button_container)
-
-        # Учащиеся
-
-        student_container = QWidget()
-        student_layout = QVBoxLayout(student_container)
-        student_layout.setContentsMargins(0, 0, 0, 0)
-
-        label_student = QLabel("Таблица учащихся")
-        label_student.setStyleSheet(
-            'background-color: White; color: #A5260A; font-size: 24px;')
-        label_student.setAlignment(Qt.AlignCenter)
-        student_layout.addWidget(label_student)
-
-        self.model_student = QStandardItemModel(self.frame_table)
-        self.model_student.setColumnCount(4)
-        self.table_student = QTableView(self.frame_table)
-        self.table_student.setModel(self.model_student)
-        self.table_student.setStyleSheet(
-            'background-color: White; font-size: 15px;')
-        self.model_student.setHorizontalHeaderLabels(
-            ["ID", "Имя", "Логин", "Пароль", "Филиал"])
-
-        self.table_student.setFixedHeight(height)
-
-        header_student = self.table_student.horizontalHeader()
-        header_student.setStyleSheet('font-size: 18px;')
-        header_student.setSectionResizeMode(QHeaderView.Stretch)
-
-        self.table_student.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.table_student.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table_student.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-        student_button_container = QWidget()
-        student_button_layout = QHBoxLayout(student_button_container)
-
-        add_student_button = QPushButton("Добавить")
-        add_student_button.setStyleSheet('background-color: White;')
-        add_student_button.clicked.connect(self.add_student_in_group)
-
-        delete_student_button = QPushButton("Удалить")
-        delete_student_button.setStyleSheet('background-color: White;')
-        delete_student_button.clicked.connect(self.delete_student_in_group)
-
-        student_button_layout.addWidget(add_student_button)
-        student_button_layout.addWidget(delete_student_button)
-
-        student_layout.addWidget(self.table_student)
-        student_layout.addWidget(student_button_container)
-
-        # Тесты
-
-        test_container = QWidget()
-        test_layout = QVBoxLayout(test_container)
-        test_layout.setContentsMargins(0, 0, 0, 0)
-
-        label_test = QLabel("Таблица тестов")
-        label_test.setStyleSheet(
-            'background-color: White; color: #A5260A; font-size: 24px;')
-        label_test.setAlignment(Qt.AlignCenter)
-        test_layout.addWidget(label_test)
-
-        self.model_test = QStandardItemModel(self.frame_table)
-        self.model_test.setColumnCount(7)
-        self.table_test = QTableView(self.frame_table)
-        self.table_test.setModel(self.model_test)
-        self.table_test.setStyleSheet(
-            'background-color: White; font-size: 15px;')
-        self.model_test.setHorizontalHeaderLabels(
-            ["ID", "Преподаватель", "Группа", "Название", "Попытки", "Общее время прохождения теста", "Дата добавления"])
-
-        self.table_test.setFixedHeight(height)
-
-        header_test = self.table_test.horizontalHeader()
-        header_test.setStyleSheet('font-size: 18px;')
-        header_test.setSectionResizeMode(QHeaderView.Stretch)
-
-        self.table_test.setSizePolicy(
-            QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.table_test.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table_test.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-        test_button_container = QWidget()
-        test_button_layout = QHBoxLayout(test_button_container)
-
-        add_test_button = QPushButton("Добавить")
-        add_test_button.setStyleSheet('background-color: White;')
-        add_test_button.clicked.connect(self.add_test_in_group)
-
-        delete_test_button = QPushButton("Удалить")
-        delete_test_button.setStyleSheet('background-color: White;')
-        delete_test_button.clicked.connect(self.delete_test_in_group)
-
-        test_button_layout.addWidget(add_test_button)
-        test_button_layout.addWidget(delete_test_button)
-
-        test_layout.addWidget(self.table_test)
-        test_layout.addWidget(test_button_container)
-
-        self.table_layout.addWidget(test_container)
-        self.table_layout.addWidget(teacher_container)
-        self.table_layout.addWidget(student_container)
-
-        self.frame_table.setContentsMargins(0, 0, 0, 0)
-
-        self.frame_table.adjustSize()
-        self.frame_table.update()
-
-
     def edit_student(self, table):
         user_id, login = self.get_selected_user(table)
         self.user_dialog_student = EditStudentDialog(
@@ -910,6 +698,217 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+    def click_button_group(self):
+        if hasattr(self, 'dop_frame') and self.dop_frame is not None:
+            self.dop_frame.deleteLater()
+            self.dop_frame = None
+
+        self.clear_table_layout()
+
+        # Группы
+
+        label_group = QLabel("Таблица группы")
+        label_group.setStyleSheet(
+            'background-color: White; color: Purple; font-size: 24px;')
+        label_group.setAlignment(Qt.AlignCenter)
+
+        self.model_group = QStandardItemModel(self.frame_table)
+        self.model_group.setColumnCount(3)
+        self.table_group = QTableView(self.frame_table)
+        self.table_group.setModel(self.model_group)
+        self.table_group.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+
+        # int(self.frame_table.height() - label_group.height()/2 - margins.bottom() - margins.top())
+        height = 450
+
+        self.table_group.setFixedHeight(height)
+
+        self.model_group.setHorizontalHeaderLabels(
+            ["ID", "Название", "Описание"])
+
+        header_group = self.table_group.horizontalHeader()
+        header_group.setStyleSheet('font-size: 18px;')
+        header_group.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.db.populate_treeview_group(self.model_group)
+
+        self.table_group.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_group.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        self.table_group.selectionModel().selectionChanged.connect(
+            self.populate_teachers_students_teste)
+
+        self.table_layout.addWidget(label_group)
+        self.table_layout.addWidget(self.table_group)
+
+        button_container = QWidget()
+        button_layout = QHBoxLayout(button_container)
+        self.add_group_table_buttons()
+        button_layout.addStretch()
+        button_layout.setAlignment(Qt.AlignRight)
+
+        self.table_layout.addWidget(button_container)
+
+        # Преподаватель
+
+        teacher_container = QWidget()
+        teacher_layout = QVBoxLayout(teacher_container)
+        teacher_layout.setContentsMargins(0, 0, 0, 0)
+
+        label_teacher = QLabel("Таблица преподавателей")
+        label_teacher.setStyleSheet(
+            'background-color: White; color: Yellow; font-size: 24px;')
+        label_teacher.setAlignment(Qt.AlignCenter)
+        teacher_layout.addWidget(label_teacher)
+
+        self.model_teacher = QStandardItemModel(self.frame_table)
+        self.model_teacher.setColumnCount(3)
+        self.table_teacher = QTableView(self.frame_table)
+        self.table_teacher.setModel(self.model_teacher)
+        self.table_teacher.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+        self.model_teacher.setHorizontalHeaderLabels(["ID", "Имя", "Логин"])
+
+        self.table_teacher.setFixedHeight(height)
+
+        header_teacher = self.table_teacher.horizontalHeader()
+        header_teacher.setStyleSheet('font-size: 18px;')
+        header_teacher.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.table_teacher.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_teacher.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_teacher.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        teacher_button_container = QWidget()
+        teacher_button_layout = QHBoxLayout(teacher_button_container)
+
+        add_teacher_button = QPushButton("Добавить")
+        add_teacher_button.setStyleSheet('background-color: White;')
+        add_teacher_button.clicked.connect(self.add_teacher_in_group)
+
+        delete_teacher_button = QPushButton("Удалить")
+        delete_teacher_button.setStyleSheet('background-color: White;')
+        delete_teacher_button.clicked.connect(self.delete_teacher_in_group)
+
+        teacher_button_layout.addWidget(add_teacher_button)
+        teacher_button_layout.addWidget(delete_teacher_button)
+
+        teacher_layout.addWidget(self.table_teacher)
+        teacher_layout.addWidget(teacher_button_container)
+
+        # Учащиеся
+
+        student_container = QWidget()
+        student_layout = QVBoxLayout(student_container)
+        student_layout.setContentsMargins(0, 0, 0, 0)
+
+        label_student = QLabel("Таблица учащихся")
+        label_student.setStyleSheet(
+            'background-color: White; color: #A5260A; font-size: 24px;')
+        label_student.setAlignment(Qt.AlignCenter)
+        student_layout.addWidget(label_student)
+
+        self.model_student = QStandardItemModel(self.frame_table)
+        self.model_student.setColumnCount(4)
+        self.table_student = QTableView(self.frame_table)
+        self.table_student.setModel(self.model_student)
+        self.table_student.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+        self.model_student.setHorizontalHeaderLabels(
+            ["ID", "Имя", "Логин", "Пароль", "Филиал"])
+
+        self.table_student.setFixedHeight(height)
+
+        header_student = self.table_student.horizontalHeader()
+        header_student.setStyleSheet('font-size: 18px;')
+        header_student.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.table_student.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_student.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_student.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        student_button_container = QWidget()
+        student_button_layout = QHBoxLayout(student_button_container)
+
+        add_student_button = QPushButton("Добавить")
+        add_student_button.setStyleSheet('background-color: White;')
+        add_student_button.clicked.connect(self.add_student_in_group)
+
+        delete_student_button = QPushButton("Удалить")
+        delete_student_button.setStyleSheet('background-color: White;')
+        delete_student_button.clicked.connect(self.delete_student_in_group)
+
+        student_button_layout.addWidget(add_student_button)
+        student_button_layout.addWidget(delete_student_button)
+
+        student_layout.addWidget(self.table_student)
+        student_layout.addWidget(student_button_container)
+
+        # Тесты
+
+        test_container = QWidget()
+        test_layout = QVBoxLayout(test_container)
+        test_layout.setContentsMargins(0, 0, 0, 0)
+
+        label_test = QLabel("Таблица тестов")
+        label_test.setStyleSheet(
+            'background-color: White; color: #A5260A; font-size: 24px;')
+        label_test.setAlignment(Qt.AlignCenter)
+        test_layout.addWidget(label_test)
+
+        self.model_test = QStandardItemModel(self.frame_table)
+        self.model_test.setColumnCount(4)
+        self.table_test = QTableView(self.frame_table)
+        self.table_test.setModel(self.model_test)
+        self.table_test.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+        self.model_test.setHorizontalHeaderLabels(
+            ["ID", "Преподаватель", "Группа", "Название", "Попытки", "Общее время прохождения теста", "Дата добавления"])
+
+        self.table_test.setFixedHeight(height)
+
+        header_test = self.table_test.horizontalHeader()
+        header_test.setStyleSheet('font-size: 18px;')
+        header_test.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.table_test.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_test.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_test.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        test_button_container = QWidget()
+        test_button_layout = QHBoxLayout(test_button_container)
+
+        add_test_button = QPushButton("Добавить")
+        add_test_button.setStyleSheet('background-color: White;')
+        add_test_button.clicked.connect(self.add_test_in_group)
+
+        delete_test_button = QPushButton("Удалить")
+        delete_test_button.setStyleSheet('background-color: White;')
+        delete_test_button.clicked.connect(self.delete_test_in_group)
+
+        test_button_layout.addWidget(add_test_button)
+        test_button_layout.addWidget(delete_test_button)
+
+        test_layout.addWidget(self.table_test)
+        test_layout.addWidget(test_button_container)
+
+        self.table_layout.addWidget(test_container)
+        self.table_layout.addWidget(teacher_container)
+        self.table_layout.addWidget(student_container)
+
+        self.frame_table.setContentsMargins(0, 0, 0, 0)
+
+        self.frame_table.adjustSize()
+        self.frame_table.update()
+
 
 class UserDialog(QDialog):
     def __init__(self, main_admin, role, table, db, parent=None):

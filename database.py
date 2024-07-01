@@ -546,13 +546,21 @@ class DataBase:
                 model.appendRow(items)
 
         elif code == 2:
-            self.cur.execute("""
-                SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
-                FROM Test
-                INNER JOIN Teacher ON Test.TeacherID = Teacher.ID
-                INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
-                WHERE Test.GroupID = ?
-            """, (group_id,))
+            if group_id == -1:
+                self.cur.execute("""
+                    SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
+                    FROM Test
+                    INNER JOIN Teacher ON Test.TeacherID = Teacher.ID
+                    INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
+                """)
+            else:
+                self.cur.execute("""
+                    SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
+                    FROM Test
+                    INNER JOIN Teacher ON Test.TeacherID = Teacher.ID
+                    INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
+                    WHERE Test.GroupID = ?
+                """, (group_id,))
 
             tests = self.cur.fetchall()
 
@@ -582,25 +590,23 @@ class DataBase:
         group = self.cur.fetchall()
         return group
 
-    def add_test(self, teacher_id, group_id, name, attempts, time, model):
-        
-        model.clear()
-        
+    def add_test_table_test(self, teacher_id, group_id, name, attempts, time, model, code):
         self.cur.execute("""
         INSERT INTO Test (TeacherID, GroupID, Name, AttemptCount, TimeTakeTest, DateAdded)
         VALUES (?, ?, ?, ?, ?, datetime('now'))
         """, (teacher_id, group_id, name, attempts, time))
         
         self.conn.commit()
+        self.get_data_teachers_students_test(model, code, 2)
+
+    def add_test(self, teacher_id, group_id, name, attempts, time, model):
+        self.cur.execute("""
+        INSERT INTO Test (TeacherID, GroupID, Name, AttemptCount, TimeTakeTest, DateAdded)
+        VALUES (?, ?, ?, ?, ?, datetime('now'))
+        """, (teacher_id, group_id, name, attempts, time))
         
-        self.cur.execute("SELECT * FROM Test WHERE GroupID = ?", (group_id,))
-        
-        rows = self.cur.fetchall()
-        for row in rows:
-            items = [QStandardItem(str(field)) for field in row]
-            model.appendRow(items)
-        model.setHorizontalHeaderLabels(
-            ["ID", "Преподаватель", "Группа", "Название", "Попытки", "Общее время прохождения теста", "Дата добавления"])
+        self.conn.commit()
+        self.get_data_teachers_students_test(model, group_id, 2)
 
     def delete_test_group(self, id_test, model, id_group):
         self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
