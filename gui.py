@@ -863,7 +863,7 @@ class MainAdmin(QMainWindow):
         test_layout.addWidget(label_test)
 
         self.model_test = QStandardItemModel(self.frame_table)
-        self.model_test.setColumnCount(4)
+        self.model_test.setColumnCount(7)
         self.table_test = QTableView(self.frame_table)
         self.table_test.setModel(self.model_test)
         self.table_test.setStyleSheet(
