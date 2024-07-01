@@ -146,6 +146,7 @@ class MainAdmin(QMainWindow):
         self.button_test.setStyleSheet(
             'font-size: 24px; background-color: Purple;')
         self.button_test.setFixedHeight(50)
+        self.button_test.clicked.connect(self.click_button_test)
         button_layout.addWidget(self.button_test)
 
         main_frame.setLayout(button_layout)
@@ -470,85 +471,6 @@ class MainAdmin(QMainWindow):
         except Exception as error:
             self.message_errore(str(error))
 
-    def edit_student(self, table):
-        user_id, login = self.get_selected_user(table)
-        self.user_dialog_student = EditStudentDialog(
-            self, table, self.db, user_id, login)
-        self.user_dialog_student.show()
-
-    def get_selected_user(self, table):
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        selected_rows = table.selectionModel().selectedIndexes()
-        if selected_rows:
-            row = selected_rows[0].row()
-            model = table.model()
-            user_id = model.data(model.index(row, 0))
-            login = model.data(model.index(row, 2))
-            return user_id, login
-
-    def clear_table_layout(self):
-        for i in reversed(range(self.table_layout.count())):
-            item = self.table_layout.itemAt(i)
-            if item is not None:
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                else:
-                    layout_item = self.table_layout.takeAt(i)
-                    if layout_item:
-                        if isinstance(layout_item, QLayout):
-                            if layout_item is not None:
-                                while layout_item.count():
-                                    item = layout_item.takeAt(0)
-                                    if item.widget():
-                                        item.widget().deleteLater()
-                                    elif item.layout():
-                                        self.clear_table_layout(item.layout())
-
-    def add_group(self):
-        self.group_dialog = GroupAddDialog(self.db, self.model_group)
-        self.group_dialog.show()
-
-    def edit_group(self):
-        selected_group = self.get_selected_group()
-        if selected_group:
-            group_id, groupname, curator_id = selected_group
-            if group_id != 0:
-                self.group_edit_dialog = GroupEditDialog(
-                    group_id, groupname, curator_id, self.db, self.model_group)
-                self.group_edit_dialog.show()
-
-    def get_selected_group(self):
-        selected_indexes = self.table_group.selectionModel().selectedIndexes()
-
-        if selected_indexes:
-            row = selected_indexes[0].row()
-            model = self.table_group.model()
-
-            group_id = model.data(model.index(row, 0))
-            groupname = model.data(model.index(row, 1))
-
-            curator_id = self.db.get_curator_id_for_group(group_id)
-
-            if curator_id is None:
-                QMessageBox.warning(
-                    self, 'Предупреждение', 'Не удалось получить ID куратора для выбранной группы.')
-
-                return 0, 0, 0
-
-            return group_id, groupname, curator_id
-        else:
-            QMessageBox.warning(
-                self, 'Предупреждение', 'Пожалуйста, выберите группу.')
-            return 0, 0, 0
-
-    def delete_group(self):
-        group_id, _, _ = self.get_selected_group()
-
-        if group_id != 0:
-            self.db.delete_group(group_id, self.model_group)
-
     def click_button_group(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
             self.dop_frame.deleteLater()
@@ -713,7 +635,7 @@ class MainAdmin(QMainWindow):
         test_layout.addWidget(label_test)
 
         self.model_test = QStandardItemModel(self.frame_table)
-        self.model_test.setColumnCount(4)
+        self.model_test.setColumnCount(7)
         self.table_test = QTableView(self.frame_table)
         self.table_test.setModel(self.model_test)
         self.table_test.setStyleSheet(
@@ -758,6 +680,86 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+
+    def edit_student(self, table):
+        user_id, login = self.get_selected_user(table)
+        self.user_dialog_student = EditStudentDialog(
+            self, table, self.db, user_id, login)
+        self.user_dialog_student.show()
+
+    def get_selected_user(self, table):
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        selected_rows = table.selectionModel().selectedIndexes()
+        if selected_rows:
+            row = selected_rows[0].row()
+            model = table.model()
+            user_id = model.data(model.index(row, 0))
+            login = model.data(model.index(row, 2))
+            return user_id, login
+
+    def clear_table_layout(self):
+        for i in reversed(range(self.table_layout.count())):
+            item = self.table_layout.itemAt(i)
+            if item is not None:
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    layout_item = self.table_layout.takeAt(i)
+                    if layout_item:
+                        if isinstance(layout_item, QLayout):
+                            if layout_item is not None:
+                                while layout_item.count():
+                                    item = layout_item.takeAt(0)
+                                    if item.widget():
+                                        item.widget().deleteLater()
+                                    elif item.layout():
+                                        self.clear_table_layout(item.layout())
+
+    def add_group(self):
+        self.group_dialog = GroupAddDialog(self.db, self.model_group)
+        self.group_dialog.show()
+
+    def edit_group(self):
+        selected_group = self.get_selected_group()
+        if selected_group:
+            group_id, groupname, curator_id = selected_group
+            if group_id != 0:
+                self.group_edit_dialog = GroupEditDialog(
+                    group_id, groupname, curator_id, self.db, self.model_group)
+                self.group_edit_dialog.show()
+
+    def get_selected_group(self):
+        selected_indexes = self.table_group.selectionModel().selectedIndexes()
+
+        if selected_indexes:
+            row = selected_indexes[0].row()
+            model = self.table_group.model()
+
+            group_id = model.data(model.index(row, 0))
+            groupname = model.data(model.index(row, 1))
+
+            curator_id = self.db.get_curator_id_for_group(group_id)
+
+            if curator_id is None:
+                QMessageBox.warning(
+                    self, 'Предупреждение', 'Не удалось получить ID куратора для выбранной группы.')
+
+                return 0, 0, 0
+
+            return group_id, groupname, curator_id
+        else:
+            QMessageBox.warning(
+                self, 'Предупреждение', 'Пожалуйста, выберите группу.')
+            return 0, 0, 0
+
+    def delete_group(self):
+        group_id, _, _ = self.get_selected_group()
+
+        if group_id != 0:
+            self.db.delete_group(group_id, self.model_group)
 
     def add_group_table_buttons(self):
         button_layout = QHBoxLayout()
@@ -843,6 +845,71 @@ class MainAdmin(QMainWindow):
             QMessageBox.warning(
                 self, 'Предупреждение', 'Пожалуйста, выберите тест.')
 
+    def click_button_test(self):
+        if hasattr(self, 'dop_frame') and self.dop_frame is not None:
+            self.dop_frame.deleteLater()
+            self.dop_frame = None
+            
+        self.clear_table_layout()
+        label_test = QLabel("Таблица с тестами")
+        label_test.setStyleSheet('background-color: White; color: Purple; font-size: 24px;')
+        label_test.setAlignment(Qt.AlignCenter)
+        
+        self.model_test = QStandardItemModel(self.frame_table)
+        self.model_test.setColumnCount(7)  # Установить количество столбцов в 7
+        self.table_test = QTableView(self.frame_table)
+        self.table_test.setModel(self.model_test)
+        self.table_test.setStyleSheet('background-color: White; font-size: 15px;')
+        
+        self.model_test.setHorizontalHeaderLabels([
+            "ID", "Преподаватель", "Группа", "Название", 
+            "Попытки", "Общее время прохождения теста", "Дата добавления"
+        ])
+        header_group = self.table_test.horizontalHeader()
+        header_group.setStyleSheet('font-size: 18px;')
+        header_group.setSectionResizeMode(QHeaderView.Stretch)
+        
+        self.table_test.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_test.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table_test.setSelectionBehavior(QAbstractItemView.SelectRows)
+        
+        test_button_container = QWidget()
+        test_button_layout = QHBoxLayout(test_button_container)
+
+        add_test_button = QPushButton("Добавить")
+        add_test_button.setStyleSheet('background-color: White;')
+        add_test_button.clicked.connect(self.add_test_in_group)
+
+        delete_test_button = QPushButton("Удалить")
+        delete_test_button.setStyleSheet('background-color: White;')
+        delete_test_button.clicked.connect(self.delete_test_in_group)
+
+        test_button_layout.addWidget(add_test_button)
+        test_button_layout.addWidget(delete_test_button)
+
+        # Проверка на существующий макет
+        if self.frame_table.layout() is not None:
+            # Очистка существующего макета
+            while self.frame_table.layout().count():
+                item = self.frame_table.layout().takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+            layout = self.frame_table.layout()
+        else:
+            # Создание нового макета
+            layout = QVBoxLayout(self.frame_table)
+            self.frame_table.setLayout(layout)
+
+        layout.addWidget(label_test)
+        layout.addWidget(self.table_test)
+        layout.addWidget(test_button_container)
+
+        self.frame_table.setContentsMargins(0, 0, 0, 0)
+
+        self.frame_table.adjustSize()
+        self.frame_table.update()
 
 class UserDialog(QDialog):
     def __init__(self, main_admin, role, table, db, parent=None):
