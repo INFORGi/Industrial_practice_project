@@ -549,8 +549,6 @@ class MainAdmin(QMainWindow):
         if group_id != 0:
             self.db.delete_group(group_id, self.model_group)
 
-
-
     def click_button_group(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
             self.dop_frame.deleteLater()
@@ -708,7 +706,6 @@ class MainAdmin(QMainWindow):
         test_layout = QVBoxLayout(test_container)
         test_layout.setContentsMargins(0, 0, 0, 0)
 
-
         label_test = QLabel("Таблица тестов")
         label_test.setStyleSheet(
             'background-color: White; color: #A5260A; font-size: 24px;')
@@ -761,8 +758,6 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
-
-
 
     def add_group_table_buttons(self):
         button_layout = QHBoxLayout()
