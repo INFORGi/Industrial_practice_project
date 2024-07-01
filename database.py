@@ -59,16 +59,16 @@ class DataBase:
         ''')
 
         self.cur.execute('''
-        CREATE TABLE IF NOT EXISTS `Group` (
+        CREATE TABLE IF NOT EXISTS "Group" (
             ID             INTEGER PRIMARY KEY ASC AUTOINCREMENT,
             Name           TEXT    NOT NULL,
             CuratorID      INTEGER,
             DateOfCreation TEXT    DEFAULT (strftime('%d-%m-%Y', 'now') ),
-            FOREIGN KEY (
-                CuratorID
-            )
-            REFERENCES Curator (ID) 
+            FOREIGN KEY (CuratorID)
+                REFERENCES Curator (ID)
+                ON DELETE CASCADE
         );
+
         ''')
 
         self.cur.execute('''
@@ -440,7 +440,7 @@ class DataBase:
             return users
 
     def populate_treeview_group(self, model):
-        model.clear()
+        model.removeRows(0, model.rowCount())
 
         self.cur.execute("""SELECT "Group".ID, "Group".Name, Curator.FullName, "Group".DateOfCreation
                             FROM "Group"
@@ -449,8 +449,6 @@ class DataBase:
         for row in rows:
             items = [QStandardItem(str(field)) for field in row]
             model.appendRow(items)
-        model.setHorizontalHeaderLabels(
-            ["ID", "Название", "Куратор (создаетль)", "Дата создания группы"])
 
     def populate_treeview(self, model, role):
         model.clear()
@@ -514,7 +512,6 @@ class DataBase:
         self.populate_treeview_group(model)
 
     def get_data_teachers_students_test(self, model, group_id, code):
-
         model.removeRows(0, model.rowCount())
 
         if code == 0:
