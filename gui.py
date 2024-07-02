@@ -633,12 +633,17 @@ class MainAdmin(QMainWindow):
             model = self.table_test.model()
 
             id_test = model.data(model.index(row, 0))
-            id_group = model.data(model.index(row, 2))
+            name_group = model.data(model.index(row, 2))
+            id_group = self.db.get_ud_group(name_group)
 
             self.db.delete_test_group(id_test, model, id_group)
+            
+            # После удаления теста вызываем метод для обновления данных в таблице
+            self.db.get_data_teachers_students_test(model, id_group, 2)
         else:
             QMessageBox.warning(
                 self, 'Предупреждение', 'Пожалуйста, выберите тест.')
+
 
     def click_button_test(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:

@@ -587,13 +587,16 @@ class DataBase:
         group = self.cur.fetchall()
         return group
 
-    # def add_test_table_test(self, teacher_id, group_id, name, attempts, time, model, code):
-    #     self.cur.execute("""
-    #     INSERT INTO Test (TeacherID, GroupID, Name, AttemptCount, TimeTakeTest, DateAdded)
-    #     VALUES (?, ?, ?, ?, ?, datetime('now'))
-    #     """, (teacher_id, group_id, name, attempts, time))
-    #     self.conn.commit()
-    #     self.get_data_teachers_students_test(model, code, 2)
+    def get_ud_group(self, name_group):
+        self.cur.execute("SELECT ID FROM 'Group' WHERE Name = ?", (name_group,))
+        
+        data = self.cur.fetchall()
+        
+        for d in data:
+            listr = []
+            listr.append(d)
+        
+        return listr
 
     def add_test(self, teacher_id, group_id, name, attempts, time, model):
         self.cur.execute("""
