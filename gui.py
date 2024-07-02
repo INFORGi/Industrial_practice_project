@@ -146,6 +146,7 @@ class MainAdmin(QMainWindow):
         self.button_test.setStyleSheet(
             'font-size: 24px; background-color: Purple;')
         self.button_test.setFixedHeight(50)
+        self.button_test.clicked.connect(self.click_button_test)
         button_layout.addWidget(self.button_test)
 
         main_frame.setLayout(button_layout)
@@ -515,8 +516,7 @@ class MainAdmin(QMainWindow):
         if selected_group:
             group_id, groupname, curator_id = selected_group
             if group_id != 0:
-                self.group_edit_dialog = GroupEditDialog(
-                    group_id, groupname, curator_id, self.db, self.model_group)
+                self.group_edit_dialog = GroupEditDialog(group_id, groupname, curator_id, self.db, self.model_group)
                 self.group_edit_dialog.show()
 
     def get_selected_group(self):
@@ -614,10 +614,17 @@ class MainAdmin(QMainWindow):
 
     def add_test_in_group(self):
         try:
-            self.test_dialog = TestDialog(self, self.table_test, self.db)
-            self.test_dialog.show()
+            self.test_dialog = TestDialog(self, self.table_test, self.db, self.table_group)
+            if self.test_dialog.initialized:
+                self.test_dialog.show()
+            else:
+                self.message_errore("Выберите группу")
         except Exception as error:
             self.message_errore(str(error))
+            
+    def add_test_in_group_window(self):
+        self.test_dialog = TestDialog2(self, self.table_test, self.db)
+        self.test_dialog.show()
 
     def delete_test_in_group(self):
         selected_indexes = self.table_test.selectionModel().selectedIndexes()
@@ -667,7 +674,7 @@ class MainAdmin(QMainWindow):
 
         add_test_button = QPushButton("Добавить")
         add_test_button.setStyleSheet('background-color: White;')
-        add_test_button.clicked.connect(self.add_test_in_group)
+        add_test_button.clicked.connect(self.add_test_in_group_window)
 
         delete_test_button = QPushButton("Удалить")
         delete_test_button.setStyleSheet('background-color: White;')
@@ -693,6 +700,8 @@ class MainAdmin(QMainWindow):
         layout.addWidget(label_test)
         layout.addWidget(self.table_test)
         layout.addWidget(test_button_container)
+
+        self.db.get_data_teachers_students_test(self.model_test, -1, 2)
 
         self.frame_table.setContentsMargins(0, 0, 0, 0)
 
@@ -720,7 +729,6 @@ class MainAdmin(QMainWindow):
         self.table_group.setStyleSheet(
             'background-color: White; font-size: 15px;')
 
-        # int(self.frame_table.height() - label_group.height()/2 - margins.bottom() - margins.top())
         height = 450
 
         self.table_group.setFixedHeight(height)
@@ -1325,6 +1333,90 @@ class AddTeatcherInGroup(QDialog):
 
 
 class TestDialog(QDialog):
+    def __init__(self, main_admin, table, db, table_group, parent=None):
+        super().__init__(parent)
+        self.main_admin = main_admin  # Сохраняем экземпляр MainAdmin
+        self.db = db
+
+        selected_indexes = table_group.selectionModel().selectedIndexes()
+        if selected_indexes:
+            self.group_id = table_group.model().data(selected_indexes[1])
+        else:
+            self.close()
+            self.initialized = False
+            return
+
+        self.initialized = True
+        self.setWindowTitle('Добавить тест')
+
+        self.layout = QVBoxLayout(self)
+
+        self.teacher_label = QLabel('Преподаватель')
+        self.teacher_combo = QComboBox()
+        self.teacher_model = QStandardItemModel()  # Инициализируем модель
+        self.teacher_combo.setModel(self.teacher_model)
+        self.layout.addWidget(self.teacher_label)
+        self.layout.addWidget(self.teacher_combo)
+
+        self.group_label = QLabel('Группа')
+        self.group_content = QLabel(str(self.group_id))
+        self.group_model = QStandardItemModel()  # Инициализируем модель
+        self.layout.addWidget(self.group_label)
+        self.layout.addWidget(self.group_content)
+
+        # Заполните комбо-боксы данными из базы данных
+        self.fill_combos()
+
+        self.name_label = QLabel('Название')
+        self.name_input = QLineEdit()
+        self.layout.addWidget(self.name_label)
+        self.layout.addWidget(self.name_input)
+
+        self.attempts_label = QLabel('Попытки')
+        self.attempts_input = QLineEdit()
+        self.layout.addWidget(self.attempts_label)
+        self.layout.addWidget(self.attempts_input)
+
+        self.time_label = QLabel('Общее время прохождения теста')
+        self.time_input = QLineEdit()
+        self.layout.addWidget(self.time_label)
+        self.layout.addWidget(self.time_input)
+
+        self.add_button = QPushButton('Добавить')
+        self.add_button.clicked.connect(lambda: self.add_test(table))
+        self.layout.addWidget(self.add_button)
+
+    def fill_combos(self):
+        teachers = self.db.get_all_teachers()
+        for teacher in teachers:
+            # Используйте индекс вместо ключа
+            item = QStandardItem(str(teacher[1]))
+            # Используйте Qt.UserRole для установки данных
+            item.setData(teacher[0], Qt.UserRole)
+            self.teacher_model.appendRow(item)
+        if self.teacher_model.rowCount() > 0:
+            self.teacher_combo.setCurrentIndex(0)  # Устанавливаем текущий индекс
+
+    def add_test(self, table):
+        selected_teacher_index = self.teacher_combo.currentIndex()
+        selected_teacher_item = self.teacher_model.item(selected_teacher_index)
+        teacher_id = selected_teacher_item.data(Qt.UserRole)
+
+        selected_group_item = self.group_content.text()
+        group_id = selected_group_item
+
+        name = self.name_input.text()
+        attempts = self.attempts_input.text()
+        time = self.time_input.text()
+
+        model = table.model()
+
+        self.db.add_test(teacher_id, group_id, name, attempts, time, model)
+
+        self.close()
+
+
+class TestDialog2(QDialog):
     def __init__(self, main_admin, table, db, parent=None):
         super().__init__(parent)
         self.main_admin = main_admin  # Сохраняем экземпляр MainAdmin
