@@ -1037,22 +1037,15 @@ class MainAdmin(QMainWindow):
                 start_color="E6E6FA", end_color="E6E6FA", fill_type="solid")  # Розовый цвет
             font = Font(color="000000")  # Черный цвет текста
             cell.font = font
-            cell.border = Border(left=Side(border_style="thin", color='000000'),
-                                 right=Side(border_style="thin",
-                                            color='000000'),
-                                 top=Side(border_style="thin", color='000000'),
-                                 bottom=Side(border_style="thin", color='000000'))
+            cell.border = Border(left=Side(border_style="thin", color='000000'), right=Side(border_style="thin", color='000000'), top=Side(
+                border_style="thin", color='000000'), bottom=Side(border_style="thin", color='000000'))
 
         for row_idx, row_data in enumerate(data, start=2):
             for col_idx, field in enumerate(row_data, start=1):
                 cell = ws.cell(row=row_idx, column=col_idx, value=str(field))
                 cell.alignment = Alignment(horizontal='center')
-                cell.border = Border(left=Side(border_style="thin", color='000000'),
-                                     right=Side(border_style="thin",
-                                                color='000000'),
-                                     top=Side(border_style="thin",
-                                              color='000000'),
-                                     bottom=Side(border_style="thin", color='000000'))
+                cell.border = Border(left=Side(border_style="thin", color='000000'), right=Side(border_style="thin", color='000000'), top=Side(
+                    border_style="thin", color='000000'), bottom=Side(border_style="thin", color='000000'))
                 ws.column_dimensions[chr(65 + col_idx - 1)].width = max(
                     ws.column_dimensions[chr(65 + col_idx - 1)].width, len(str(field)) + 2)
 
