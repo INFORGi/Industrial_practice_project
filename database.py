@@ -478,7 +478,7 @@ class DataBase:
 
         for user in users:
             items = [QStandardItem(str(field)) for field in user]
-            model.appendRow(items)  
+            model.appendRow(items)
 
     def update_group(self, group_id, groupname, curator_id, model):
         try:
@@ -545,11 +545,19 @@ class DataBase:
         elif code == 2:
             if group_id == -1:
                 self.cur.execute("""
-                    SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
+                    SELECT Test.Name AS TestName, Teacher.FullName, 'Group'.Name AS GroupName, 
+                        Test.AttemptCount, Test.TimeTakeTest
                     FROM Test
                     INNER JOIN Teacher ON Test.TeacherID = Teacher.ID
                     INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
                 """)
+
+                tests = self.cur.fetchall()
+
+                for test in tests:
+                    items = [QStandardItem(str(field)) for field in test]
+                    model.appendRow(items)
+
             else:
                 self.cur.execute("""
                     SELECT Test.ID, Teacher.FullName, 'Group'.Name, Test.Name, Test.AttemptCount, Test.TimeTakeTest, Test.DateAdded
@@ -559,11 +567,11 @@ class DataBase:
                     WHERE Test.GroupID = ?
                 """, (group_id,))
 
-            tests = self.cur.fetchall()
+                tests = self.cur.fetchall()
 
-            for test in tests:
-                items = [QStandardItem(str(field)) for field in test]
-                model.appendRow(items)
+                for test in tests:
+                    items = [QStandardItem(str(field)) for field in test]
+                    model.appendRow(items)
 
     def fill_list(self, list, code):
         if code == 0:
@@ -588,22 +596,18 @@ class DataBase:
         return group
 
     def get_ud_group(self, name_group):
-        self.cur.execute("SELECT ID FROM 'Group' WHERE Name = ?", (name_group,))
-        
-        data = self.cur.fetchall()
-        
-        for d in data:
-            listr = []
-            listr.append(d)
-        
-        return listr
+        self.cur.execute("SELECT * FROM 'Group' WHERE Name = ?", (name_group,))
+
+        id = self.cur.fetchall()
+
+        return id[0]
 
     def add_test(self, teacher_id, group_id, name, attempts, time, model):
         self.cur.execute("""
         INSERT INTO Test (TeacherID, GroupID, Name, AttemptCount, TimeTakeTest, DateAdded)
         VALUES (?, ?, ?, ?, ?, datetime('now'))
         """, (teacher_id, group_id, name, attempts, time))
-        
+
         self.conn.commit()
         self.get_data_teachers_students_test(model, group_id, 2)
 
@@ -611,4 +615,47 @@ class DataBase:
         self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
         self.conn.commit()
         self.get_data_teachers_students_test(model, id_group, 2)
-        
+
+    def output_of_evaluation_test(self, model_test, id_test):
+        self.cur.execute("""
+            SELECT 
+                Student.FullName, 
+                COUNT(DISTINCT TestContent.ID) AS TotalQuestions,
+                TestResult.CorrectAnswerCount AS CorrectAnswers,
+                TestResult.CorrectAnswerPercent AS CorrectAnswerPercent,
+                TestResult.TestTime AS AvgTestTime,
+                TestResult.Grade AS AvgGrade,
+                COUNT(DISTINCT TestResult.ID) AS Attempt
+            FROM TestResult
+            LEFT JOIN TestContent ON TestResult.TestID = TestContent.TestID
+            INNER JOIN Student ON TestResult.StudentID = Student.ID
+            WHERE TestResult.TestID = ?
+            GROUP BY Student.FullName
+        """, (id_test,))
+        results = self.cur.fetchall()
+        if results:
+            self.cur.execute(
+                "SELECT AttemptCount FROM Test WHERE ID = ?", (id_test,))
+            number_attempts = self.cur.fetchone()[0]
+
+            data = []
+            for result in results:
+                correct_answer_percent = f"{result[3]}%"
+                attempt_str = f"{result[6]}/{number_attempts}"
+
+                data.append([result[0], result[1], result[2],
+                            correct_answer_percent, result[4], result[5], attempt_str])
+                items = [QStandardItem(str(field)) for field in data[-1]]
+                model_test.appendRow(items)
+
+    def get_id_group(self, name_test, name_group):
+        self.cur.execute("""
+            SELECT Test.ID 
+            FROM Test
+            INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
+            WHERE Test.Name = ? AND 'Group'.Name = ?
+        """, (name_test, name_group))
+
+        result = self.cur.fetchone()
+        if result:
+            return result[0]  # Возвращаем ID группы

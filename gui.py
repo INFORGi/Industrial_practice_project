@@ -1,12 +1,23 @@
-import sys
+import os
 from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit,
                              QPushButton, QMessageBox, QVBoxLayout, QHBoxLayout,
                              QMainWindow, QFrame, QScrollArea, QGridLayout, QHeaderView,
                              QFileDialog, QDialog, QComboBox, QTableView, QSizePolicy, QAbstractItemView,
                              QLayout, QListWidget, QDesktopWidget)
 
-from PyQt5.QtCore import Qt, QSortFilterProxyModel
+from PyQt5.QtCore import Qt, QSortFilterProxyModel, QModelIndex
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment
+from openpyxl.styles import PatternFill
+from openpyxl.styles import Font
+from openpyxl.styles import Border, Side
+
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+from datetime import datetime
 
 
 class AuthorizationWindow(QWidget):
@@ -516,7 +527,8 @@ class MainAdmin(QMainWindow):
         if selected_group:
             group_id, groupname, curator_id = selected_group
             if group_id != 0:
-                self.group_edit_dialog = GroupEditDialog(group_id, groupname, curator_id, self.db, self.model_group)
+                self.group_edit_dialog = GroupEditDialog(
+                    group_id, groupname, curator_id, self.db, self.model_group)
                 self.group_edit_dialog.show()
 
     def get_selected_group(self):
@@ -614,14 +626,15 @@ class MainAdmin(QMainWindow):
 
     def add_test_in_group(self):
         try:
-            self.test_dialog = TestDialog(self, self.table_test, self.db, self.table_group)
+            self.test_dialog = TestDialog(
+                self, self.table_test, self.db, self.table_group)
             if self.test_dialog.initialized:
                 self.test_dialog.show()
             else:
                 self.message_errore("Выберите группу")
         except Exception as error:
             self.message_errore(str(error))
-            
+
     def add_test_in_group_window(self):
         self.test_dialog = TestDialog2(self, self.table_test, self.db)
         self.test_dialog.show()
@@ -637,43 +650,45 @@ class MainAdmin(QMainWindow):
             id_group = self.db.get_ud_group(name_group)
 
             self.db.delete_test_group(id_test, model, id_group)
-            
+
             # После удаления теста вызываем метод для обновления данных в таблице
             self.db.get_data_teachers_students_test(model, id_group, 2)
         else:
             QMessageBox.warning(
                 self, 'Предупреждение', 'Пожалуйста, выберите тест.')
 
-
     def click_button_test(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
             self.dop_frame.deleteLater()
             self.dop_frame = None
-            
+
         self.clear_table_layout()
         label_test = QLabel("Таблица с тестами")
-        label_test.setStyleSheet('background-color: White; color: Purple; font-size: 24px;')
+        label_test.setStyleSheet(
+            'background-color: White; color: Purple; font-size: 24px;')
         label_test.setAlignment(Qt.AlignCenter)
-        
+
         self.model_test = QStandardItemModel(self.frame_table)
-        self.model_test.setColumnCount(7)  # Установить количество столбцов в 7
+        self.model_test.setColumnCount(5)
         self.table_test = QTableView(self.frame_table)
         self.table_test.setModel(self.model_test)
-        self.table_test.setStyleSheet('background-color: White; font-size: 15px;')
-        
+        self.table_test.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+
         self.model_test.setHorizontalHeaderLabels([
-            "ID", "Преподаватель", "Группа", "Название", 
-            "Попытки", "Общее время прохождения теста", "Дата добавления"
+            "Название", "Преподаватель", "Группа",
+            "Попытки", "Общее время прохождения теста"
         ])
         header_group = self.table_test.horizontalHeader()
         header_group.setStyleSheet('font-size: 18px;')
         header_group.setSectionResizeMode(QHeaderView.Stretch)
-        
-        self.table_test.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.table_test.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.table_test.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table_test.setSelectionBehavior(QAbstractItemView.SelectRows)
-        
+
         test_button_container = QWidget()
         test_button_layout = QHBoxLayout(test_button_container)
 
@@ -688,7 +703,6 @@ class MainAdmin(QMainWindow):
         test_button_layout.addWidget(add_test_button)
         test_button_layout.addWidget(delete_test_button)
 
-        # Проверка на существующий макет
         if self.frame_table.layout() is not None:
             # Очистка существующего макета
             while self.frame_table.layout().count():
@@ -712,6 +726,9 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+        self.table_test.doubleClicked.connect(
+            self.on_table_test_double_clicked)
 
     def click_button_group(self):
         if hasattr(self, 'dop_frame') and self.dop_frame is not None:
@@ -739,7 +756,7 @@ class MainAdmin(QMainWindow):
         self.table_group.setFixedHeight(height)
 
         self.model_group.setHorizontalHeaderLabels(
-            ["ID", "Название", "Описание"])
+            ["ID", "Название", "Описание", "Время добавления"])
 
         header_group = self.table_group.horizontalHeader()
         header_group.setStyleSheet('font-size: 18px;')
@@ -921,6 +938,154 @@ class MainAdmin(QMainWindow):
 
         self.frame_table.adjustSize()
         self.frame_table.update()
+
+    def on_table_test_double_clicked(self, index: QModelIndex):
+        # Получаем данные строки, на которую дважды нажали
+        row = index.row()
+        test_data = [self.model_test.item(row, column).text(
+        ) for column in range(self.model_test.columnCount())]
+
+        self.test_data_for_print_excel_and_word = test_data
+
+        self.clear_table_layout()
+
+        label_detail = QLabel(
+            f"Детальная информация для теста: {test_data[0]}")
+        label_detail.setStyleSheet(
+            'background-color: White; color: Purple; font-size: 24px;')
+        label_detail.setAlignment(Qt.AlignCenter)
+
+        self.detail_model = QStandardItemModel(self.frame_table)
+        self.detail_table = QTableView(self.frame_table)
+        self.detail_table.setModel(self.detail_model)
+        self.detail_table.setStyleSheet(
+            'background-color: White; font-size: 15px;')
+
+        self.detail_model.setHorizontalHeaderLabels([
+            "ФИО учащегося", "Количество вопросов", "Количество правильно отвеченных вопросов",
+            "Процент правильно отвеченных вопросов", "Время прохождения теста", "Оценка", "Попытка"
+        ])
+        header_group = self.detail_table.horizontalHeader()
+        header_group.setStyleSheet('font-size: 18px;')
+        header_group.setSectionResizeMode(QHeaderView.Stretch)
+
+        self.detail_table.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.detail_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.detail_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        back_button = QPushButton("Назад")
+        back_button.setStyleSheet('background-color: White;')
+        back_button.clicked.connect(self.click_button_test)
+
+        print_button = QPushButton("Отчет в Word и Excel")
+        print_button.setStyleSheet('background-color: White;')
+        print_button.clicked.connect(self.on_print_button_clicked)
+
+        if self.frame_table.layout() is not None:
+            while self.frame_table.layout().count():
+                item = self.frame_table.layout().takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+            layout = self.frame_table.layout()
+        else:
+            layout = QVBoxLayout(self.frame_table)
+            self.frame_table.setLayout(layout)
+
+        layout.addWidget(label_detail)
+        layout.addWidget(self.detail_table)
+        layout.addWidget(back_button)
+        layout.addWidget(print_button)
+
+        id_test = self.db.get_id_group(test_data[0], test_data[2])
+
+        if id_test is not None:
+            self.db.output_of_evaluation_test(self.detail_model, id_test)
+
+        self.frame_table.setContentsMargins(0, 0, 0, 0)
+        self.frame_table.adjustSize()
+        self.frame_table.update()
+
+    def on_print_button_clicked(self):
+        data = []
+        for row in range(self.detail_model.rowCount()):
+            row_data = [self.detail_model.item(row, col).text(
+            ) for col in range(self.detail_model.columnCount())]
+            data.append(row_data)
+
+        test_name = self.test_data_for_print_excel_and_word[0]
+        group_name = self.test_data_for_print_excel_and_word[2]
+        current_date = datetime.now().strftime("%Y-%m-%d")
+
+        # Сохранение в Excel
+        excel_filename = f"{test_name}_{current_date}_{group_name}.xlsx"
+        excel_filepath = os.path.join(
+            os.path.expanduser("~/Downloads"), excel_filename)
+
+        wb = Workbook()
+        ws = wb.active
+
+        headers = ["ФИО учащегося", "Количество вопросов", "Количество правильно отвеченных вопросов",
+                   "Процент правильно отвеченных вопросов", "Время прохождения теста", "Оценка", "Попытка"]
+
+        for col, header in enumerate(headers, start=1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.alignment = Alignment(
+                horizontal='center', vertical='center', wrap_text=True)
+            cell.fill = PatternFill(
+                start_color="E6E6FA", end_color="E6E6FA", fill_type="solid")  # Розовый цвет
+            font = Font(color="000000")  # Черный цвет текста
+            cell.font = font
+            cell.border = Border(left=Side(border_style="thin", color='000000'),
+                                 right=Side(border_style="thin",
+                                            color='000000'),
+                                 top=Side(border_style="thin", color='000000'),
+                                 bottom=Side(border_style="thin", color='000000'))
+
+        for row_idx, row_data in enumerate(data, start=2):
+            for col_idx, field in enumerate(row_data, start=1):
+                cell = ws.cell(row=row_idx, column=col_idx, value=str(field))
+                cell.alignment = Alignment(horizontal='center')
+                cell.border = Border(left=Side(border_style="thin", color='000000'),
+                                     right=Side(border_style="thin",
+                                                color='000000'),
+                                     top=Side(border_style="thin",
+                                              color='000000'),
+                                     bottom=Side(border_style="thin", color='000000'))
+                ws.column_dimensions[chr(65 + col_idx - 1)].width = max(
+                    ws.column_dimensions[chr(65 + col_idx - 1)].width, len(str(field)) + 2)
+
+        wb.save(excel_filepath)
+
+        # Сохранение в Word
+        word_filename = f"{test_name}_{current_date}_{group_name}.docx"
+        word_filepath = os.path.join(
+            os.path.expanduser("~/Downloads"), word_filename)
+
+        doc = Document()
+
+        table = doc.add_table(rows=1, cols=len(headers))
+        hdr_cells = table.rows[0].cells
+        for i, header in enumerate(headers):
+            hdr_cells[i].text = header
+            hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        for row_data in data:
+            row_cells = table.add_row().cells
+            for i, field in enumerate(row_data):
+                if isinstance(field, float):
+                    field = f"{field:.2f}"
+                row_cells[i].text = str(field)
+
+        doc.save(word_filepath)
+
+        # Вывод сообщения об успешном сохранении
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Файлы успешно сохранены в папке Загрузки.")
+        msg.setWindowTitle("Успешное сохранение")
+        msg.exec_()
 
 
 class UserDialog(QDialog):
@@ -1345,7 +1510,8 @@ class TestDialog(QDialog):
 
         selected_indexes = table_group.selectionModel().selectedIndexes()
         if selected_indexes:
-            self.group_id = table_group.model().data(selected_indexes[1])
+            self.group_id = table_group.model().data(selected_indexes[0])
+            self.group_name = table_group.model().data(selected_indexes[1])
         else:
             self.close()
             self.initialized = False
@@ -1364,7 +1530,7 @@ class TestDialog(QDialog):
         self.layout.addWidget(self.teacher_combo)
 
         self.group_label = QLabel('Группа')
-        self.group_content = QLabel(str(self.group_id))
+        self.group_content = QLabel(str(self.group_name))
         self.group_model = QStandardItemModel()  # Инициализируем модель
         self.layout.addWidget(self.group_label)
         self.layout.addWidget(self.group_content)
@@ -1400,15 +1566,13 @@ class TestDialog(QDialog):
             item.setData(teacher[0], Qt.UserRole)
             self.teacher_model.appendRow(item)
         if self.teacher_model.rowCount() > 0:
-            self.teacher_combo.setCurrentIndex(0)  # Устанавливаем текущий индекс
+            self.teacher_combo.setCurrentIndex(
+                0)  # Устанавливаем текущий индекс
 
     def add_test(self, table):
         selected_teacher_index = self.teacher_combo.currentIndex()
         selected_teacher_item = self.teacher_model.item(selected_teacher_index)
         teacher_id = selected_teacher_item.data(Qt.UserRole)
-
-        selected_group_item = self.group_content.text()
-        group_id = selected_group_item
 
         name = self.name_input.text()
         attempts = self.attempts_input.text()
@@ -1416,7 +1580,8 @@ class TestDialog(QDialog):
 
         model = table.model()
 
-        self.db.add_test(teacher_id, group_id, name, attempts, time, model)
+        self.db.add_test(teacher_id, self.group_id,
+                         name, attempts, time, model)
 
         self.close()
 
