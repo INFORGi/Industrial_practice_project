@@ -649,10 +649,25 @@ class MainAdmin(QMainWindow):
             name_group = model.data(model.index(row, 2))
             id_group = self.db.get_ud_group(name_group)
 
-            self.db.delete_test_group(id_test, model, id_group)
+            self.db.delete_test_group(id_test, model, 0)
 
             # После удаления теста вызываем метод для обновления данных в таблице
             self.db.get_data_teachers_students_test(model, id_group, 2)
+        else:
+            QMessageBox.warning(
+                self, 'Предупреждение', 'Пожалуйста, выберите тест.')
+
+    def delete_test(self):
+        selected_indexes = self.table_test.selectionModel().selectedIndexes()
+        if selected_indexes:
+            row = selected_indexes[0].row()
+            model = self.table_test.model()
+
+            id_test = self.db.get_id_test(model.data(model.index(row, 0)), model.data(model.index(row, 2)))
+            name_group = model.data(model.index(row, 2))
+            id_group = self.db.get_ud_group(name_group)
+
+            self.db.delete_test_group(id_test, model, -1)
         else:
             QMessageBox.warning(
                 self, 'Предупреждение', 'Пожалуйста, выберите тест.')
@@ -698,7 +713,7 @@ class MainAdmin(QMainWindow):
 
         delete_test_button = QPushButton("Удалить")
         delete_test_button.setStyleSheet('background-color: White;')
-        delete_test_button.clicked.connect(self.delete_test_in_group)
+        delete_test_button.clicked.connect(self.delete_test)
 
         test_button_layout.addWidget(add_test_button)
         test_button_layout.addWidget(delete_test_button)
@@ -1665,3 +1680,5 @@ class TestDialog2(QDialog):
         self.db.add_test(teacher_id, group_id, name, attempts, time, model)
 
         self.close()
+
+

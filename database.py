@@ -611,10 +611,15 @@ class DataBase:
         self.conn.commit()
         self.get_data_teachers_students_test(model, group_id, 2)
 
-    def delete_test_group(self, id_test, model, id_group):
-        self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
-        self.conn.commit()
-        self.get_data_teachers_students_test(model, id_group, 2)
+    def delete_test_group(self, id_test, model, code):
+        if code == -1:
+            self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
+            self.conn.commit()
+            self.get_data_teachers_students_test(model, -1, 2)
+        else:
+            self.cur.execute("DELETE FROM Test WHERE ID = ?", (id_test,))
+            self.conn.commit()
+            self.get_data_teachers_students_test(model, 0, 2)
 
     def output_of_evaluation_test(self, model_test, id_test):
         self.cur.execute("""
@@ -655,6 +660,19 @@ class DataBase:
             INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
             WHERE Test.Name = ? AND 'Group'.Name = ?
         """, (name_test, name_group))
+
+        result = self.cur.fetchone()
+        if result:
+            return result[0]  # Возвращаем ID группы
+        
+        
+    def get_id_test(self, name_test, name_group):
+        self.cur.execute("""
+            SELECT Test.ID 
+            FROM Test
+            INNER JOIN 'Group' ON Test.GroupID = 'Group'.ID
+            WHERE Test.Name = ? AND 'Group'.Name = ?
+        """, (name_test, name_group,))
 
         result = self.cur.fetchone()
         if result:
