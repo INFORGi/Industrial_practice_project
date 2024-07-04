@@ -8,6 +8,12 @@ class DataBase:
         self.conn = sqlite3.connect('database.db')
         self.cur = self.conn.cursor()
         self.create_tables()
+        
+        self.cur.execute("""
+            INSERT INTO Administrator (column1, column2, column3, column4)
+            VALUES (?, ?, ?)
+        """, (1, 'Admin', 1, 1))
+        self.conn.commit()
 
     def create_tables(self):
         self.cur.execute('''
@@ -64,9 +70,10 @@ class DataBase:
             Name           TEXT    NOT NULL,
             CuratorID      INTEGER,
             DateOfCreation TEXT    DEFAULT (strftime('%d-%m-%Y', 'now') ),
-            FOREIGN KEY (CuratorID)
-                REFERENCES Curator (ID)
-                ON DELETE CASCADE
+            FOREIGN KEY (
+                CuratorID
+            )
+            REFERENCES Curator (ID) ON DELETE CASCADE
         );
 
         ''')
@@ -130,27 +137,35 @@ class DataBase:
 
         self.cur.execute('''
         CREATE TABLE IF NOT EXISTS TestContent (
-            ID INTEGER PRIMARY KEY,
-            TestID INTEGER,
-            Question TEXT NOT NULL,
-            Answers TEXT NOT NULL,
-            CorrectAnswer TEXT NOT NULL,
-            FOREIGN KEY (TestID) REFERENCES Test(ID)
+            ID            INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            TestID        INTEGER,
+            Question      TEXT    NOT NULL,
+            Answers       TEXT    NOT NULL,
+            CorrectAnswer TEXT    NOT NULL,
+            FOREIGN KEY (
+                TestID
+            )
+            REFERENCES Test (ID) 
         );
         ''')
 
         self.cur.execute('''
         CREATE TABLE IF NOT EXISTS TestResult (
-            ID INTEGER PRIMARY KEY,
-            TestID INTEGER,
-            StudentID INTEGER,
-            CorrectAnswerCount INTEGER,
+            ID                   INTEGER PRIMARY KEY ASC AUTOINCREMENT,
+            TestID               INTEGER,
+            StudentID            INTEGER,
+            CorrectAnswerCount   INTEGER,
             CorrectAnswerPercent INTEGER,
-            TestTime TEXT,
-            Grade TEXT,
-            Attempt TEXT,
-            FOREIGN KEY (TestID) REFERENCES Test(ID),
-            FOREIGN KEY (StudentID) REFERENCES Student(ID)
+            TestTime             TEXT,
+            Grade                TEXT,
+            FOREIGN KEY (
+                TestID
+            )
+            REFERENCES Test (ID),
+            FOREIGN KEY (
+                StudentID
+            )
+            REFERENCES Student (ID) 
         );
         ''')
 
@@ -664,8 +679,7 @@ class DataBase:
         result = self.cur.fetchone()
         if result:
             return result[0]  # Возвращаем ID группы
-        
-        
+
     def get_id_test(self, name_test, name_group):
         self.cur.execute("""
             SELECT Test.ID 
