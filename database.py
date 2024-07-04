@@ -9,11 +9,14 @@ class DataBase:
         self.cur = self.conn.cursor()
         self.create_tables()
         
-        self.cur.execute("""
-            INSERT INTO Administrator (column1, column2, column3, column4)
-            VALUES (?, ?, ?)
-        """, (1, 'Admin', 1, 1))
-        self.conn.commit()
+        self.cur.execute("SELECT COUNT(*) FROM Administrator WHERE FullName = ? AND Login = ? AND Password = ?", ('Admin', '1', '1'))
+        if self.cur.fetchone()[0] == 0:
+            # Insert the record only if it does not exist
+            self.cur.execute("""
+                INSERT INTO Administrator (FullName, Login, Password)
+                VALUES (?, ?, ?)
+            """, ('Admin', '1', '1'))
+            self.conn.commit()
 
     def create_tables(self):
         self.cur.execute('''
